@@ -80,7 +80,7 @@ export const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ saleId, onCl
             }
           }
         } catch (error) {
-          handleFirestoreError(error, OperationType.GET, `sales/${saleId}`);
+          
         }
       };
       fetchSale();
@@ -114,7 +114,7 @@ export const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ saleId, onCl
 
       setStep(3);
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'invoices');
+      
       alert('Error al timbrar la factura.');
     } finally {
       setLoading(false);

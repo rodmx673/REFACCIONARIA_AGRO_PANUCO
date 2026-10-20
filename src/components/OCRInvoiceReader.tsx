@@ -516,7 +516,7 @@ export const OCRInvoiceReader: React.FC<OCRInvoiceReaderProps> = ({
       });
     } catch (err: any) {
       console.error('Error importing to inventory:', err);
-      handleFirestoreError(err, OperationType.CREATE, 'products');
+      
     } finally {
       setIsSavingStock(false);
     }
@@ -573,7 +573,7 @@ export const OCRInvoiceReader: React.FC<OCRInvoiceReaderProps> = ({
       });
     } catch (err: any) {
       console.error('Error saving invoice to history:', err);
-      handleFirestoreError(err, OperationType.CREATE, 'invoices_history');
+      
     } finally {
       setIsSavingHistory(false);
     }

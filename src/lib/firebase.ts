@@ -27,5 +27,5 @@ export const limit = () => ({});
 export const where = () => ({});
 export const getDoc = async () => ({ exists: () => false, data: () => ({}) });
 export const runTransaction = async () => {};
-export const handleFirestoreError = () => {};
+export const 
 export const OperationType = { GET: 'get', WRITE: 'write', CREATE: 'create', UPDATE: 'update', DELETE: 'delete' };

@@ -59,7 +59,7 @@ export const MultiAssistantChat: React.FC = () => {
     // Firebase eliminado
     // Firebase eliminado
 
-    return () => unsubscribe();
+    
   }, [user]);
 
   // Load conversation for selected assistant
@@ -76,7 +76,7 @@ export const MultiAssistantChat: React.FC = () => {
 
     // Firebase eliminado
 
-    return () => unsubscribe();
+    
   }, [user, selectedAssistantId, assistants]);
 
   useEffect(() => {
@@ -184,7 +184,7 @@ export const MultiAssistantChat: React.FC = () => {
 
     } catch (error) {
       console.error("AI Error:", error);
-      handleFirestoreError(error, OperationType.WRITE, 'assistant_conversations');
+      
     } finally {
       setIsLoading(false);
     }

@@ -331,7 +331,7 @@ export const ImportInvoiceToStockModal: React.FC<ImportInvoiceToStockModalProps>
       }
     } catch (err: any) {
       console.error('Error executing inventory import:', err);
-      handleFirestoreError(err, OperationType.CREATE, 'products');
+      
     } finally {
       setIsImporting(false);
     }

@@ -51,7 +51,7 @@ export const SatConfigWizard: React.FC = () => {
           setConfig(docSnap.data() as SatConfig);
         }
       } catch (error) {
-        handleFirestoreError(error, OperationType.GET, 'satConfig/main');
+        
       }
     };
     fetchConfig();
@@ -68,7 +68,7 @@ export const SatConfigWizard: React.FC = () => {
       });
       alert('Configuración guardada exitosamente. Los archivos CSD han sido encriptados y almacenados de forma segura.');
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'satConfig/main');
+      
     } finally {
       setLoading(false);
     }

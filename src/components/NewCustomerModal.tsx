@@ -206,7 +206,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Error saving customer:', error);
-      handleFirestoreError(error, OperationType.WRITE, 'customers');
+      
       setFormError('Ocurrió un error al guardar el cliente en la base de datos.');
     } finally {
       setIsSubmitting(false);

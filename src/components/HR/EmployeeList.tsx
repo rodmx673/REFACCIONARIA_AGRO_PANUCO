@@ -81,7 +81,7 @@ export const EmployeeList: React.FC = () => {
     // Firebase eliminado
     // Firebase eliminado
 
-    return () => unsubscribe();
+    
   }, []);
 
   // Load positions from Firestore
