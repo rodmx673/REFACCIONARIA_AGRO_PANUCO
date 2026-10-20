@@ -13,16 +13,20 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+        // Redirigir todas las llamadas de Firebase a nuestro Stub para que Vercel no truene
+        'firebase/app': path.resolve(__dirname, './src/lib/firebase.ts'),
+        'firebase/auth': path.resolve(__dirname, './src/lib/firebase.ts'),
+        'firebase/firestore': path.resolve(__dirname, './src/lib/firebase.ts'),
       },
     },
     optimizeDeps: {
-      include: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+      include: [],
     },
     build: {
       commonjsOptions: {
         transformMixedEsModules: true,
       },
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 1500,
     },
     server: {
       host: '0.0.0.0',
