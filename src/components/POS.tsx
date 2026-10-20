@@ -22,8 +22,8 @@ import {
   Camera,
   Receipt
 } from 'lucide-react';
-import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, query, where, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
+
+
 import { Product, Sale, SaleItem, Customer } from '../types';
 import { cn, formatCurrency } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -171,7 +171,7 @@ export const POS: React.FC = () => {
         paymentMethod,
         status: 'COMPLETED',
         timestamp: new Date().toISOString(),
-        sellerId: auth.currentUser?.uid || 'unknown'
+        sellerId: 'vendedor_pos'
       };
 
       const url = import.meta.env.VITE_APPS_SCRIPT_URL;
@@ -205,7 +205,7 @@ export const POS: React.FC = () => {
               quantity: item.quantity,
               reason: `Venta en POS #${ticketId}`,
               timestamp: new Date().toISOString(),
-              userId: auth.currentUser?.uid || 'vendedor_pos'
+              userId: 'vendedor_pos'
             } 
           })
         });

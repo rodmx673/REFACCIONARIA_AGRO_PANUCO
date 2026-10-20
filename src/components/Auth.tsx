@@ -1,155 +1,139 @@
-import React, { useState, useEffect } from 'react';
-import { auth, db } from '../firebase';
-import { signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { User } from '../types';
-import { Tractor, ShieldCheck, ShoppingBag } from 'lucide-react';
+import { Tractor, ShieldCheck, ShoppingBag, LogIn } from 'lucide-react';
 import { motion } from 'motion/react';
+
+// Interfaz para el token de Google
+interface GoogleUserInfo {
+  email: string;
+  name: string;
+  picture: string;
+}
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: () => Promise<void>;
-  signOut: () => Promise<void>;
+  signInWithGoogle: (credential: string) => void;
   signInAsDemo: () => void;
+  signOut: () => void;
 }
 
-export const AuthContext = React.createContext<AuthContextType>({
+export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  signIn: async () => {},
-  signOut: async () => {},
+  signInWithGoogle: () => {},
   signInAsDemo: () => {},
+  signOut: () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const savedDemo = sessionStorage.getItem('farmer_parts_demo_user');
-      if (savedDemo) return JSON.parse(savedDemo);
-    } catch {}
-    return null;
-  });
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const signInAsDemo = async () => {
+  useEffect(() => {
+    // Cargar sesión guardada en el navegador
+    try {
+      const savedUser = localStorage.getItem('farmer_parts_user');
+      if (savedUser) setUser(JSON.parse(savedUser));
+    } catch (e) {
+      console.error("Error cargando sesión", e);
+    }
+    setLoading(false);
+  }, []);
+
+  const signInWithGoogle = (credential: string) => {
+    try {
+      // Decodificar el JWT de Google (sin librerías externas)
+      const base64Url = credential.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+
+      const googleData: GoogleUserInfo = JSON.parse(jsonPayload);
+
+      const newUser: User = {
+        id: googleData.email, // Usamos el email como ID único
+        name: googleData.name,
+        email: googleData.email,
+        role: 'ADMIN', // Por ahora todos los que entren con Google serán Admin
+      };
+
+      localStorage.setItem('farmer_parts_user', JSON.stringify(newUser));
+      setUser(newUser);
+    } catch (error) {
+      console.error("Error procesando inicio de sesión:", error);
+    }
+  };
+
+  const signInAsDemo = () => {
     const demoUser: User = {
       id: 'admin-local',
-      name: 'Administrador Farmer Parts',
-      email: 'rod.mx673@gmail.com',
+      name: 'Administrador Demo',
+      email: 'demo@farmerparts.com',
       role: 'ADMIN',
     };
-    try {
-      sessionStorage.setItem('farmer_parts_demo_user', JSON.stringify(demoUser));
-    } catch {}
-    try {
-      await signInAnonymously(auth);
-    } catch (e) {
-      console.warn('Anonymous sign-in not available:', e);
-    }
+    localStorage.setItem('farmer_parts_user', JSON.stringify(demoUser));
     setUser(demoUser);
   };
 
-  const signOut = async () => {
-    try {
-      sessionStorage.removeItem('farmer_parts_demo_user');
-    } catch {}
-    try {
-      await auth.signOut();
-    } catch (e) {
-      console.warn('Error during sign out:', e);
-    }
+  const signOut = () => {
+    localStorage.removeItem('farmer_parts_user');
     setUser(null);
-  };
-
-  useEffect(() => {
-    // 1. Atrapar el resultado de la redirección de Google (móvil)
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) console.log("Sesión iniciada vía redirección");
-      })
-      .catch((error) => {
-        console.error("Error en redirección:", error);
-      });
-
-    // 2. Escuchar el estado de autenticación
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser && !firebaseUser.isAnonymous) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data() as User;
-            setUser({ id: firebaseUser.uid, ...data, role: 'ADMIN' } as User);
-          } else {
-            const newUser: User = {
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || 'Administrador',
-              email: firebaseUser.email || 'rod.mx673@gmail.com',
-              role: 'ADMIN',
-            };
-            await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
-            setUser(newUser);
-          }
-        } catch (err) {
-          console.error('Error fetching user profile:', err);
-          setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || 'Admin', email: firebaseUser.email || '', role: 'ADMIN' });
-        }
-      } else {
-        try {
-          const savedDemo = sessionStorage.getItem('farmer_parts_demo_user');
-          if (savedDemo) {
-            setUser(JSON.parse(savedDemo));
-            setLoading(false);
-            return;
-          }
-        } catch {}
-        if (!firebaseUser) setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const signIn = async () => {
-    const provider = new GoogleAuthProvider();
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    try {
-      if (isMobile) {
-        // En Android/iOS usamos redirección porque bloquean las ventanas emergentes
-        await signInWithRedirect(auth, provider);
-      } else {
-        // En computadora usamos popup normal
-        await signInWithPopup(auth, provider);
-      }
-    } catch (error: any) {
-      if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
-        console.error('Error signing in:', error);
-      }
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.disableAutoSelect();
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut, signInAsDemo }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInAsDemo, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const LoginView: React.FC<{ onExploreStore?: () => void }> = ({ onExploreStore }) => {
-  const { signIn, signInAsDemo } = React.useContext(AuthContext);
-  const [isSigningIn, setIsSigningIn] = useState(false);
+declare global {
+  interface Window {
+    google: any;
+  }
+}
 
-  const handleSignIn = async () => {
-    if (isSigningIn) return;
-    setIsSigningIn(true);
-    try {
-      await signIn();
-    } finally {
-      setTimeout(() => setIsSigningIn(false), 3000); // Evitar doble clic
-    }
-  };
+export const LoginView: React.FC<{ onExploreStore?: () => void }> = ({ onExploreStore }) => {
+  const { signInWithGoogle, signInAsDemo } = useContext(AuthContext);
+  const buttonRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Cargar el script oficial de Google Identity Services
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      if (window.google?.accounts?.id && buttonRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          callback: (response: any) => {
+            if (response.credential) signInWithGoogle(response.credential);
+          }
+        });
+
+        // Renderizar el botón oficial de Google
+        window.google.accounts.id.renderButton(buttonRef.current, {
+          theme: "outline",
+          size: "large",
+          width: "100%",
+          text: "continue_with",
+          shape: "rectangular"
+        });
+      }
+    };
+
+    return () => {
+      if (document.body.contains(script)) document.body.removeChild(script);
+    };
+  }, [signInWithGoogle]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-primary p-4 overflow-hidden relative">
@@ -168,21 +152,21 @@ export const LoginView: React.FC<{ onExploreStore?: () => void }> = ({ onExplore
         </div>
 
         <div className="space-y-4">
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 mb-6">
             <ShieldCheck className="text-blue-600 shrink-0" size={20} />
             <p className="text-sm text-blue-800">
-              Elige tu tipo de acceso. Los administradores entran directo con Google; los usuarios necesitan un código de registro.
+              Inicia sesión de forma segura con tu cuenta corporativa de Google.
             </p>
           </div>
 
-          <button onClick={handleSignIn} disabled={isSigningIn} className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-primary rounded-xl font-semibold text-white hover:bg-primary/90 transition-all shadow-md disabled:opacity-50">
-            {isSigningIn ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 bg-white rounded-full p-0.5" />
-            )}
-            {isSigningIn ? 'Conectando...' : 'Continuar con Google (Administrador)'}
-          </button>
+          {/* Contenedor donde Google dibuja su botón oficial */}
+          <div ref={buttonRef} className="w-full flex justify-center min-h-[50px]"></div>
+
+          <div className="relative flex py-4 items-center">
+            <div className="flex-grow border-t border-gray-200"></div>
+            <span className="flex-shrink mx-4 text-xs text-gray-400 font-bold uppercase">o también</span>
+            <div className="flex-grow border-t border-gray-200"></div>
+          </div>
 
           <button onClick={signInAsDemo} className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-98">
             <Tractor size={18} />
@@ -190,17 +174,10 @@ export const LoginView: React.FC<{ onExploreStore?: () => void }> = ({ onExplore
           </button>
 
           {onExploreStore && (
-            <div className="pt-2">
-              <div className="relative flex py-2 items-center">
-                <div className="flex-grow border-t border-gray-200"></div>
-                <span className="flex-shrink mx-4 text-xs text-gray-400 font-bold uppercase">o también</span>
-                <div className="flex-grow border-t border-gray-200"></div>
-              </div>
-              <button type="button" onClick={onExploreStore} className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-xl font-bold text-sm transition-all shadow-xs">
-                <ShoppingBag size={18} className="text-emerald-700" />
-                <span>Explorar Tienda Virtual como Cliente</span>
-              </button>
-            </div>
+            <button type="button" onClick={onExploreStore} className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-xl font-bold text-sm transition-all shadow-xs mt-4">
+              <ShoppingBag size={18} className="text-emerald-700" />
+              <span>Explorar Tienda Virtual como Cliente</span>
+            </button>
           )}
         </div>
 

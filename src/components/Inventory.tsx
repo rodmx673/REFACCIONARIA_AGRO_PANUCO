@@ -25,8 +25,8 @@ import {
 } from 'lucide-react';
 import { Html5Qrcode } from "html5-qrcode";
 import { generateContentWithFallback, parseJsonFromMarkdown } from '../lib/gemini';
-import { db, auth } from '../firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+
+
 import {
   getProducts as getProductsApi,
   createProduct as createProductApi,
@@ -298,7 +298,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
             quantity: Math.abs(diff),
             reason: sanitizedInvoiceRef ? `Ajuste según Factura ${sanitizedInvoiceRef}` : 'Ajuste manual de inventario',
             timestamp: new Date().toISOString(),
-            userId: auth.currentUser?.uid || 'unknown',
+            userId: 'admin',
             invoiceReference: sanitizedInvoiceRef
           });
         }
@@ -319,7 +319,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
             quantity: formData.stock,
             reason: sanitizedInvoiceRef ? `Inventario inicial según Factura ${sanitizedInvoiceRef}` : 'Inventario inicial',
             timestamp: new Date().toISOString(),
-            userId: auth.currentUser?.uid || 'unknown',
+            userId: 'admin',
             invoiceReference: sanitizedInvoiceRef
           });
         }
