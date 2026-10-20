@@ -12,6 +12,7 @@ import { Inventory } from './components/Inventory';
 import { Customers } from './components/Customers';
 import { Vendors } from './components/Vendors';
 import { Reports } from './components/Reports';
+import { AdminPanel } from './components/AdminPanel';
 import { Settings } from './components/Settings';
 import { EmployeeList } from './components/HR/EmployeeList';
 import { CommissionCalculator } from './components/HR/CommissionCalculator';
@@ -95,6 +96,7 @@ function AppContent() {
       case 'customers': return <Customers />;
       case 'vendors': return <Vendors />;
       case 'reports': return <Reports />;
+      case 'admin': return <AdminPanel />;
       case 'employees': return <EmployeeList />;
       case 'commissions': return <CommissionCalculator />;
       case 'attendance': return <AttendanceManager />;

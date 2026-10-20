@@ -70,13 +70,8 @@ export const POS: React.FC = () => {
       const prodData = await prodRes.json();
       if (prodData.success) setProducts(prodData.data || []);
 
-      // Los clientes los seguimos leyendo de Firebase por ahora, 
-      // ya que tu Code.gs aún no tiene la acción para guardarlos.
-      const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
-        setCustomers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer)));
-      });
-      
-      return () => unsubCustomers();
+      // Clientes (Temporalmente vacío hasta migrar a Sheets)
+      setCustomers([]);
     } catch (err) {
       console.error("Error cargando POS desde Sheets:", err);
     }
