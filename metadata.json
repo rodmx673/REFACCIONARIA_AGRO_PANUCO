@@ -1,0 +1,6 @@
+{
+  "name": "Farmer Parts - Gestión Agrícola",
+  "description": "Sistema POS, extractor de facturas inteligente con IA y módulo de historial de facturas con trazabilidad a documentos originales para tractores y refacciones agrícolas.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

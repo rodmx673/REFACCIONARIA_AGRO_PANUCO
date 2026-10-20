@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // Products catalog
+    match /products/{productId} {
+      allow read, write: if true;
+    }
+
+    // Sales transactions
+    match /sales/{saleId} {
+      allow read, write: if true;
+    }
+
+    // Customers
+    match /customers/{customerId} {
+      allow read, write: if true;
+    }
+
+    // Vendors & Suppliers
+    match /vendors/{vendorId} {
+      allow read, write: if true;
+    }
+
+    // Business configuration
+    match /businessConfig/{configId} {
+      allow read, write: if true;
+    }
+
+    // Inventory movements
+    match /inventoryMovements/{movementId} {
+      allow read, write: if true;
+    }
+
+    // Employees & Human Resources
+    match /employees/{employeeId} {
+      allow read, write: if true;
+    }
+
+    // Employee positions
+    match /positions/{positionId} {
+      allow read, write: if true;
+    }
+
+    // Attendance records
+    match /attendance/{attendanceId} {
+      allow read, write: if true;
+    }
+
+    // Payroll records
+    match /payroll/{payrollId} {
+      allow read, write: if true;
+    }
+
+    // Invoices & SAT
+    match /invoices/{invoiceId} {
+      allow read, write: if true;
+    }
+
+    match /invoices_history/{invoiceId} {
+      allow read, write: if true;
+    }
+
+    match /satConfig/{configId} {
+      allow read, write: if true;
+    }
+
+    // Commissions
+    match /commissions/{commissionId} {
+      allow read, write: if true;
+    }
+
+    // AI Virtual Assistants & Conversations
+    match /virtual_assistants/{assistantId} {
+      allow read, write: if true;
+    }
+
+    match /assistant_conversations/{conversationId} {
+      allow read, write: if true;
+    }
+
+    match /assistant_settings/{settingId} {
+      allow read, write: if true;
+    }
+
+    // E-Commerce Collections
+    match /orders/{orderId} {
+      allow read, write: if true;
+    }
+
+    match /reviews/{reviewId} {
+      allow read, write: if true;
+    }
+
+    match /coupons/{couponId} {
+      allow read, write: if true;
+    }
+
+    match /blog_posts/{postId} {
+      allow read, write: if true;
+    }
+
+    match /support_tickets/{ticketId} {
+      allow read, write: if true;
+    }
+
+    // Test connection
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // Default deny for unmapped paths
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
