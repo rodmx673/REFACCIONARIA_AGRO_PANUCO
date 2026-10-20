@@ -1,32 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  History, 
-  Search, 
-  Filter, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  Settings2,
-  Calendar,
-  X,
-  Download,
-  Package,
-  User,
-  FileText
-} from 'lucide-react';
-
-
-import { InventoryMovement, Product, User as UserType } from '../types';
-import { cn, formatDate, formatCurrency } from '../lib/utils';
+import { History, Search, Filter, ArrowUpRight, ArrowDownLeft, Settings2, Calendar, X, Download, Package, User, FileText } from 'lucide-react';
+import { InventoryMovement, Product } from '../types';
+import { cn, formatDate } from '../lib/utils';
 import { motion } from 'motion/react';
 
 interface InventoryHistoryProps {
   onClose: () => void;
 }
 
+const URL = import.meta.env.VITE_APPS_SCRIPT_URL;
+
 export const InventoryHistory: React.FC<InventoryHistoryProps> = ({ onClose }) => {
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
-  const [users, setUsers] = useState<Record<string, UserType>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'IN' | 'OUT' | 'ADJ'>('ALL');
@@ -34,38 +20,41 @@ export const InventoryHistory: React.FC<InventoryHistoryProps> = ({ onClose }) =
   const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
-    // Fetch products for reference
-    // Firebase eliminado
-      setProducts(productMap);
-    });
+    const loadData = async () => {
+      try {
+        // Cargar movimientos desde Google Sheets
+        const movRes = await fetch(URL, { method: 'POST', body: JSON.stringify({ action: 'getMovements', data: {} }) });
+        const movData = await movRes.json();
+        if (movData.success) setMovements(movData.data || []);
 
-    // Fetch users for reference
-    // Firebase eliminado
-      setUsers(userMap);
-    });
-
-    // Fetch movements
-    // Firebase eliminado
-    // Firebase eliminado
-
-    return () => {
-      unsubProducts();
-      unsubUsers();
-      unsubMovements();
+        // Cargar productos desde Google Sheets
+        const prodRes = await fetch(URL, { method: 'POST', body: JSON.stringify({ action: 'getProducts', data: {} }) });
+        const prodData = await prodRes.json();
+        if (prodData.success) {
+          const productMap: Record<string, Product> = {};
+          (prodData.data || []).forEach((p: Product) => { productMap[p.id] = p; });
+          setProducts(productMap);
+        }
+      } catch (error) {
+        console.warn('Error cargando historial:', error);
+      } finally {
+        setLoading(false);
+      }
     };
+
+    loadData();
   }, []);
 
   const filteredMovements = movements.filter(m => {
     const product = products[m.productId];
     const matchesSearch = !searchTerm || 
-      (product?.pieceNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (product?.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (m.reason.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (m.invoiceReference && m.invoiceReference.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (product?.invoiceReference && product.invoiceReference.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+      (product?.pieceNumber?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (product?.description?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (m.reason?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (m.invoiceReference?.toLowerCase().includes(searchTerm.toLowerCase()));
+
     const matchesType = typeFilter === 'ALL' || m.type === typeFilter;
-    
+
     const movementDate = new Date(m.timestamp).toISOString().split('T')[0];
     const matchesStartDate = !startDate || movementDate >= startDate;
     const matchesEndDate = !endDate || movementDate <= endDate;
@@ -107,7 +96,6 @@ export const InventoryHistory: React.FC<InventoryHistoryProps> = ({ onClose }) =
       exit={{ opacity: 0, y: 20 }}
       className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden flex flex-col h-full max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-12rem)]"
     >
-      {/* Header */}
       <div className="p-4 sm:p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner shrink-0">
@@ -119,22 +107,15 @@ export const InventoryHistory: React.FC<InventoryHistoryProps> = ({ onClose }) =
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button 
-            className="p-2 text-gray-400 hover:bg-white rounded-xl transition-all"
-            title="Exportar CSV"
-          >
+          <button className="p-2 text-gray-400 hover:bg-white rounded-xl transition-all" title="Exportar CSV">
             <Download size={20} />
           </button>
-          <button 
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:bg-white rounded-xl transition-all"
-          >
+          <button onClick={onClose} className="p-2 text-gray-400 hover:bg-white rounded-xl transition-all">
             <X size={24} />
           </button>
         </div>
       </div>
 
-      {/* Filters */}
       <div className="p-4 sm:p-6 border-b border-gray-50 bg-white space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="relative sm:col-span-2">
@@ -183,7 +164,6 @@ export const InventoryHistory: React.FC<InventoryHistoryProps> = ({ onClose }) =
         </div>
       </div>
 
-      {/* Table */}
       <div className="flex-1 overflow-auto">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64 gap-4">
@@ -210,7 +190,6 @@ export const InventoryHistory: React.FC<InventoryHistoryProps> = ({ onClose }) =
             <tbody className="divide-y divide-gray-50">
               {filteredMovements.map(movement => {
                 const product = products[movement.productId];
-                const user = users[movement.userId];
                 return (
                   <tr key={movement.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-4">
@@ -253,24 +232,20 @@ export const InventoryHistory: React.FC<InventoryHistoryProps> = ({ onClose }) =
                       <p className="text-xs text-gray-600 italic line-clamp-1" title={movement.reason}>
                         {movement.reason || 'Sin motivo especificado'}
                       </p>
-                      {(movement.invoiceReference || product?.invoiceReference) && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60 mt-1" title={`Factura vinculada: ${movement.invoiceReference || product?.invoiceReference}`}>
+                      {movement.invoiceReference && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60 mt-1">
                           <FileText size={10} className="text-emerald-600 shrink-0" />
-                          Fac: {movement.invoiceReference || product?.invoiceReference}
+                          Fac: {movement.invoiceReference}
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                          {user?.email ? (
-                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} alt="Avatar" />
-                          ) : (
-                            <User size={12} className="text-gray-400" />
-                          )}
+                        <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                          <User size={12} className="text-gray-400" />
                         </div>
                         <span className="text-[10px] font-bold text-gray-500 truncate max-w-[80px]">
-                          {user?.name || 'Sistema'}
+                          {movement.userId || 'Sistema'}
                         </span>
                       </div>
                     </td>
@@ -282,7 +257,6 @@ export const InventoryHistory: React.FC<InventoryHistoryProps> = ({ onClose }) =
         )}
       </div>
 
-      {/* Footer Summary */}
       <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
           Mostrando {filteredMovements.length} movimientos
