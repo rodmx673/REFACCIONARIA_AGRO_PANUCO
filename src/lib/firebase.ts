@@ -1,4 +1,5 @@
-// Archivo temporal para evitar errores de compilación (Stub)
+// Stub de Firebase para mantener compatibilidad de imports
+// Mientras se migran todos los módulos a Google Sheets
 export const initializeApp = () => ({});
 export const getApps = () => [];
 export const getApp = () => ({});
@@ -27,5 +28,6 @@ export const limit = () => ({});
 export const where = () => ({});
 export const getDoc = async () => ({ exists: () => false, data: () => ({}) });
 export const runTransaction = async () => {};
-export const 
+
+export const handleFirestoreError = () => {};
 export const OperationType = { GET: 'get', WRITE: 'write', CREATE: 'create', UPDATE: 'update', DELETE: 'delete' };
