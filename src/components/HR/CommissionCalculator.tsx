@@ -41,34 +41,15 @@ export const CommissionCalculator: React.FC = () => {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'employees'), where('status', '==', 'ACTIVE'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const employeeData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Employee[];
-      setEmployees(employeeData);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'employees');
-    });
+    // Firebase eliminado
+    // Firebase eliminado
 
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    const q = query(collection(db, 'commissions'), where('period', '==', selectedPeriod));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const commissionData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Commission[];
-      setCommissions(commissionData);
-      
-      const totals = commissionData.reduce((acc, comm) => ({
-        totalSales: acc.totalSales + comm.totalSales,
-        totalCommissions: acc.totalCommissions + comm.calculatedCommission,
-        pendingPayments: acc.pendingPayments + (comm.status === 'PENDING' ? comm.calculatedCommission : 0)
-      }), { totalSales: 0, totalCommissions: 0, pendingPayments: 0 });
+    // Firebase eliminado
+    // Firebase eliminado
       
       setStats(totals);
       setLoading(false);

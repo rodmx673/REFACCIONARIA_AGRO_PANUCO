@@ -35,32 +35,18 @@ export const InventoryHistory: React.FC<InventoryHistoryProps> = ({ onClose }) =
 
   useEffect(() => {
     // Fetch products for reference
-    const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
-      const productMap: Record<string, Product> = {};
-      snapshot.docs.forEach(doc => {
-        productMap[doc.id] = { id: doc.id, ...doc.data() } as Product;
-      });
+    // Firebase eliminado
       setProducts(productMap);
     });
 
     // Fetch users for reference
-    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const userMap: Record<string, UserType> = {};
-      snapshot.docs.forEach(doc => {
-        userMap[doc.id] = { id: doc.id, ...doc.data() } as UserType;
-      });
+    // Firebase eliminado
       setUsers(userMap);
     });
 
     // Fetch movements
-    const q = query(collection(db, 'inventoryMovements'), orderBy('timestamp', 'desc'));
-    const unsubMovements = onSnapshot(q, (snapshot) => {
-      setMovements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryMovement)));
-      setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'inventoryMovements');
-      setLoading(false);
-    });
+    // Firebase eliminado
+    // Firebase eliminado
 
     return () => {
       unsubProducts();

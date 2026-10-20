@@ -45,19 +45,9 @@ export const Payroll: React.FC = () => {
   });
 
   useEffect(() => {
-    const unsubEmployees = onSnapshot(collection(db, 'employees'), (snapshot) => {
-      setEmployees(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee)));
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'employees');
-    });
+    // Firebase eliminado
 
-    const unsubPayroll = onSnapshot(collection(db, 'payroll'), (snapshot) => {
-      setPayrollRecords(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PayrollRecord)));
-      setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'payroll');
-      setLoading(false);
-    });
+    // Firebase eliminado
 
     return () => {
       unsubEmployees();

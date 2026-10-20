@@ -43,23 +43,11 @@ export const AssistantSettings: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(collection(db, 'virtual_assistants'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VirtualAssistant));
-      setAssistants(data);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching assistants:", error);
-      toast.error("Error al cargar los asistentes virtuales");
-      setLoading(false);
-    });
+    // Firebase eliminado
+    // Firebase eliminado
 
     const settingsRef = doc(db, 'assistant_settings', 'global');
-    const unsubscribeSettings = onSnapshot(settingsRef, (doc) => {
-      if (doc.exists()) {
-        setGlobalSettings(doc.data() as AssistantGlobalSettings);
-      }
-    });
+    // Firebase eliminado
 
     return () => {
       unsubscribe();

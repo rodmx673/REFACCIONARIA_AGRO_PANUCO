@@ -36,15 +36,8 @@ const OnlineStoreInner: React.FC<OnlineStoreViewProps> = ({ onOpenERP }) => {
 
   // Listen to Firestore products in real time
   useEffect(() => {
-    const q = query(collection(db, 'products'));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const prods = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-      setProducts(prods);
-      setLoading(false);
-    }, (err) => {
-      console.warn('Could not listen to products:', err);
-      setLoading(false);
-    });
+    // Firebase eliminado
+    // Firebase eliminado
     return () => unsub();
   }, []);
 

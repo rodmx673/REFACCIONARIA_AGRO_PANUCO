@@ -283,7 +283,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const refreshClientOrders = async (email: string) => {
     if (!email) return;
     try {
-      const q = query(collection(db, 'orders'), where('customerEmail', '==', email.trim().toLowerCase()));
+      // Firebase eliminado
       const snap = await getDocs(q);
       const orders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
       // Sort by creation date descending

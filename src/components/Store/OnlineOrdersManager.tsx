@@ -32,16 +32,8 @@ export const OnlineOrdersManager: React.FC = () => {
   const [newCarrier, setNewCarrier] = useState('FedEx Express');
 
   useEffect(() => {
-    const q = query(collection(db, 'orders'));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const fetched = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Order));
-      fetched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setOrders(fetched);
-      setLoading(false);
-    }, (err) => {
-      console.warn('Orders listener error:', err);
-      setLoading(false);
-    });
+    // Firebase eliminado
+    // Firebase eliminado
     return () => unsub();
   }, []);
 

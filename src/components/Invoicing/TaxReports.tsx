@@ -65,21 +65,7 @@ export const TaxReports: React.FC = () => {
       where('status', '==', 'VIGENTE')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const invoiceData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Invoice[];
-      setInvoices(invoiceData);
-      
-      const totals = invoiceData.reduce((acc, inv) => ({
-        totalTaxed: acc.totalTaxed + (inv.total / 1.16),
-        totalExempt: acc.totalExempt + 0, // Simplified
-        ivaTrasladado: acc.ivaTrasladado + inv.taxAmount,
-        ivaRetenido: acc.ivaRetenido + 0,
-        isrRetenido: acc.isrRetenido + 0,
-        totalInvoiced: acc.totalInvoiced + inv.total
-      }), { totalTaxed: 0, totalExempt: 0, ivaTrasladado: 0, ivaRetenido: 0, isrRetenido: 0, totalInvoiced: 0 });
+    // Firebase eliminado
       
       setStats(totals);
       setLoading(false);

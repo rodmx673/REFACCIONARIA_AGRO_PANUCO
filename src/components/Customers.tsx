@@ -31,11 +31,7 @@ export const Customers: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<Customer | null>(null);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'customers'), (snapshot) => {
-      setCustomers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer)));
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'customers');
-    });
+    // Firebase eliminado
     return () => unsub();
   }, []);
 

@@ -193,11 +193,8 @@ export const InvoiceHistory: React.FC<InvoiceHistoryProps> = ({
 
   // Subscribe to invoices collection
   useEffect(() => {
-    const q = query(collection(db, 'invoices_history'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs: InvoiceHistoryRecord[] = [];
-      snapshot.forEach((d) => {
-        docs.push({ id: d.id, ...(d.data() as Omit<InvoiceHistoryRecord, 'id'>) });
+    // Firebase eliminado
+    // Firebase eliminado
       });
       setInvoices(docs);
       setLoading(false);

@@ -69,35 +69,7 @@ export const PositionsManager: React.FC<PositionsManagerProps> = ({
 
   // Listen to Firestore positions collection
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'positions'), (snapshot) => {
-      if (snapshot.empty) {
-        // Initialize with default positions if Firestore has no custom ones
-        setPositions(DEFAULT_POSITIONS);
-      } else {
-        const firestorePositions = snapshot.docs.map(docSnap => ({
-          id: docSnap.id,
-          ...docSnap.data()
-        })) as PositionRole[];
-
-        // Merge defaults with firestore positions
-        const mergedMap = new Map<string, PositionRole>();
-        DEFAULT_POSITIONS.forEach(dp => mergedMap.set(dp.code, dp));
-        firestorePositions.forEach(fp => mergedMap.set(fp.code, fp));
-
-        const mergedList = Array.from(mergedMap.values());
-        setPositions(mergedList);
-
-        // Update selected position if it exists
-        const currentSelected = mergedList.find(p => p.id === selectedPosition.id || p.code === selectedPosition.code);
-        if (currentSelected) {
-          setSelectedPosition(currentSelected);
-          setEditedPermissions(currentSelected.permissions);
-        }
-      }
-    }, (err) => {
-      console.warn('Using local default positions:', err);
-      setPositions(DEFAULT_POSITIONS);
-    });
+    // Firebase eliminado
 
     return () => unsub();
   }, []);

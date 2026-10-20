@@ -56,20 +56,8 @@ export const MultiAssistantChat: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(collection(db, 'virtual_assistants'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const loadedAssistants = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as VirtualAssistant))
-        .filter(a => a.isActive);
-        
-      setAssistants(loadedAssistants);
-      
-      if (loadedAssistants.length > 0 && !selectedAssistantId) {
-        setSelectedAssistantId(loadedAssistants[0].id);
-      }
-    }, (error) => {
-      console.warn('Error reading virtual_assistants:', error);
-    });
+    // Firebase eliminado
+    // Firebase eliminado
 
     return () => unsubscribe();
   }, [user]);
@@ -86,30 +74,7 @@ export const MultiAssistantChat: React.FC = () => {
       limit(1)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      if (!snapshot.empty) {
-        const conv = snapshot.docs[0].data() as AssistantConversation;
-        setConversations(prev => ({
-          ...prev,
-          [selectedAssistantId]: conv.messages
-        }));
-      } else {
-        // Initial message if no conversation exists
-        const assistant = assistants.find(a => a.id === selectedAssistantId);
-        if (assistant) {
-          const initMsg: AssistantMessage = {
-            id: 'init',
-            role: 'assistant',
-            content: `¡Hola! Soy ${assistant.name}, tu ${assistant.specialty}. ${assistant.identity.description.split('.')[0]}. ¿En qué puedo ayudarte hoy?`,
-            timestamp: new Date().toISOString()
-          };
-          setConversations(prev => ({
-            ...prev,
-            [selectedAssistantId]: [initMsg]
-          }));
-        }
-      }
-    });
+    // Firebase eliminado
 
     return () => unsubscribe();
   }, [user, selectedAssistantId, assistants]);

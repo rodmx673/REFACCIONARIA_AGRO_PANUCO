@@ -78,37 +78,15 @@ export const EmployeeList: React.FC = () => {
 
   // Load employees from Firestore
   useEffect(() => {
-    const q = query(collection(db, 'employees'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const employeeData = snapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      })) as Employee[];
-      setEmployees(employeeData);
-      setLoading(false);
-    }, (error) => {
-      console.warn('Error reading employees:', error);
-      setLoading(false);
-    });
+    // Firebase eliminado
+    // Firebase eliminado
 
     return () => unsubscribe();
   }, []);
 
   // Load positions from Firestore
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'positions'), (snapshot) => {
-      if (!snapshot.empty) {
-        const firestorePositions = snapshot.docs.map(docSnap => ({
-          id: docSnap.id,
-          ...docSnap.data()
-        })) as PositionRole[];
-
-        const mergedMap = new Map<string, PositionRole>();
-        DEFAULT_POSITIONS.forEach(dp => mergedMap.set(dp.code, dp));
-        firestorePositions.forEach(fp => mergedMap.set(fp.code, fp));
-        setPositions(Array.from(mergedMap.values()));
-      }
-    });
+    // Firebase eliminado
 
     return () => unsub();
   }, []);

@@ -41,13 +41,7 @@ export const Settings: React.FC = () => {
   const [activeSection, setActiveSection] = useState('business');
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'businessConfig', 'main'), (docSnap) => {
-      if (docSnap.exists()) {
-        setConfig(docSnap.data() as BusinessConfig);
-      }
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'businessConfig/main');
-    });
+    // Firebase eliminado
     return () => unsub();
   }, []);
 

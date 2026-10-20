@@ -37,12 +37,8 @@ export const AttendanceManager: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
-    const q = query(collection(db, 'employees'), where('status', '==', 'ACTIVE'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setEmployees(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee)));
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'employees');
-    });
+    // Firebase eliminado
+    // Firebase eliminado
     return () => unsubscribe();
   }, []);
 
@@ -51,13 +47,7 @@ export const AttendanceManager: React.FC = () => {
       collection(db, 'attendance'), 
       where('date', '==', selectedDate)
     );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setTodayAttendance(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Attendance)));
-      setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'attendance');
-      setLoading(false);
-    });
+    // Firebase eliminado
     return () => unsubscribe();
   }, [selectedDate]);
 

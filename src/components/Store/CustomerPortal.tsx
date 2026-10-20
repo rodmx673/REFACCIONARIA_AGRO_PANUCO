@@ -54,16 +54,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     if (!emailInput.trim()) return;
     setLoadingOrders(true);
 
-    const q = query(collection(db, 'orders'), where('customerEmail', '==', emailInput.trim().toLowerCase()));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
-      fetched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setOrders(fetched);
-      setLoadingOrders(false);
-    }, (err) => {
-      console.warn('Orders snapshot error:', err);
-      setLoadingOrders(false);
-    });
+    // Firebase eliminado
+    // Firebase eliminado
 
     return () => unsub();
   }, [emailInput]);

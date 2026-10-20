@@ -50,17 +50,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
   // Listen to Firestore reviews for this product
   useEffect(() => {
-    const q = query(collection(db, 'reviews'), where('productId', '==', product.pieceNumber));
-    const unsub = onSnapshot(q, (snapshot) => {
-      if (!snapshot.empty) {
-        const firestoreReviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
-        // Merge with samples
-        const merged = [...(SAMPLE_REVIEWS[product.pieceNumber] || [])];
-        firestoreReviews.forEach(fr => {
-          if (!merged.some(m => m.id === fr.id)) {
-            merged.unshift(fr);
-          }
-        });
+    // Firebase eliminado
+    // Firebase eliminado
         setReviews(merged);
       }
     }, (err) => {
