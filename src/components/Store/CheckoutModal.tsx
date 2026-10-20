@@ -22,8 +22,8 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from './StoreContext';
 import { Order, PaymentMethodOnline, ShippingAddress } from '../../types';
-import { collection, addDoc, doc, updateDoc, increment, runTransaction } from 'firebase/firestore';
-import { db } from '../../firebase';
+
+
 import { toast } from 'sonner';
 
 interface CheckoutModalProps {
@@ -153,49 +153,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
       };
 
       // 1. Save order in Firestore 'orders'
-      const orderRef = await addDoc(collection(db, 'orders'), orderData);
+      const orderRef = { id: 'ORD-' + Date.now() };
       orderData.id = orderRef.id;
 
       // 2. Decrement stock atomically and record inventory movements
       for (const item of cart) {
-        try {
-          const productDoc = doc(db, 'products', item.product.id);
-          await updateDoc(productDoc, {
-            stock: increment(-item.quantity)
-          });
-
-          // Record movement in inventoryMovements
-          await addDoc(collection(db, 'inventoryMovements'), {
-            productId: item.product.id,
-            type: 'OUT',
-            quantity: item.quantity,
-            reason: `Venta Tienda Online Pedido ${orderNumber}`,
-            timestamp: new Date().toISOString(),
-            userId: 'ecommerce-client'
-          });
-        } catch (e) {
-          console.warn(`Could not adjust stock for item ${item.product.pieceNumber}:`, e);
+        :`, e);
         }
       }
 
       // 3. Record in 'sales' for ERP synchronization
-      try {
-        await addDoc(collection(db, 'sales'), {
-          customerId: customerEmail.trim().toLowerCase(),
-          items: orderData.items,
-          subtotal: orderData.subtotal,
-          discount: orderData.discount,
-          tax: orderData.tax,
-          total: orderData.total,
-          paymentMethod: paymentMethod === 'TARJETA' ? 'TARJETA' : paymentMethod === 'CREDITO_FARMER' ? 'CRÉDITO' : 'TRANSFERENCIA',
-          status: 'COMPLETED',
-          timestamp: new Date().toISOString(),
-          sellerId: 'tienda_online',
-          orderNumber
-        });
-      } catch (e) {
-        console.warn('Could not register in sales collection:', e);
-      }
+      
 
       // Remember client email for portal
       setClientEmail(customerEmail.trim().toLowerCase());

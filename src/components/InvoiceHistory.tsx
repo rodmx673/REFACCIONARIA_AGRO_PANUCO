@@ -27,8 +27,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
-import { db, auth, handleFirestoreError, OperationType } from '../firebase';
+
+
 import { InvoiceHistoryRecord, InvoiceArticle } from '../types';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';

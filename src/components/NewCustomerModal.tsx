@@ -18,8 +18,8 @@ import {
   Percent,
   FileText
 } from 'lucide-react';
-import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+
+
 import { Customer } from '../types';
 import { toast } from 'sonner';
 

@@ -24,7 +24,7 @@ import {
   where,
   getDocs
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../../firebase';
+
 import { Employee, Commission, PayrollRecord } from '../../types';
 import { cn, formatCurrency, formatDate } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';

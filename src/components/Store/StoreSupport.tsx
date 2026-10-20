@@ -13,8 +13,8 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
+
+
 import { toast } from 'sonner';
 
 interface StoreSupportProps {

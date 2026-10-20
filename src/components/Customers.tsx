@@ -15,8 +15,8 @@ import {
   UserX,
   AlertCircle
 } from 'lucide-react';
-import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+
+
 import { Customer } from '../types';
 import { cn, formatCurrency } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';

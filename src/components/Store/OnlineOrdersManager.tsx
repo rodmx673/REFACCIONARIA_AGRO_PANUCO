@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Order, OrderStatus } from '../../types';
-import { collection, onSnapshot, doc, updateDoc, query, orderBy } from 'firebase/firestore';
-import { db } from '../../firebase';
+
+
 import { toast } from 'sonner';
 
 export const OnlineOrdersManager: React.FC = () => {

@@ -21,7 +21,7 @@ import {
   setDoc, 
   serverTimestamp 
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../../firebase';
+
 import { SatConfig } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 

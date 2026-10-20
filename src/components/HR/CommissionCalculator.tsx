@@ -25,7 +25,7 @@ import {
   orderBy,
   limit
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../../firebase';
+
 import { Employee, Sale, Commission } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 

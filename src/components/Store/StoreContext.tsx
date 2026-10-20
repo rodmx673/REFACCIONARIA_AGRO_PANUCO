@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, CartItem, Order, Coupon, ShippingAddress } from '../../types';
-import { collection, onSnapshot, query, where, getDocs, doc, setDoc, addDoc, updateDoc, runTransaction } from 'firebase/firestore';
-import { db } from '../../firebase';
+
+
 import { toast } from 'sonner';
 
 interface StoreContextType {
@@ -251,15 +251,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Check pre-defined or Firestore coupons
     let coupon = DEFAULT_COUPONS.find(c => c.code === cleanCode);
     if (!coupon) {
-      try {
-        const q = query(collection(db, 'coupons'), where('code', '==', cleanCode), where('isActive', '==', true));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          coupon = snap.docs[0].data() as Coupon;
-        }
-      } catch (e) {
-        console.warn('Could not query coupons in db:', e);
-      }
+      
     }
 
     if (!coupon) {

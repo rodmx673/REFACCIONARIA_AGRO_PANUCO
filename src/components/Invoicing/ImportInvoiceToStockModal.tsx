@@ -17,8 +17,8 @@ import {
   Layers
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { collection, getDocs, query, where, addDoc, updateDoc, doc } from 'firebase/firestore';
-import { db, auth, handleFirestoreError, OperationType } from '../../firebase';
+
+
 import { Product, InvoiceArticle, InventoryMovement } from '../../types';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';

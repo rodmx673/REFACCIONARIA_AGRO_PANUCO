@@ -16,8 +16,8 @@ import {
   Globe,
   Bot
 } from 'lucide-react';
-import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+
+
 import { BusinessConfig, User as UserType } from '../types';
 import { AuthContext } from './Auth';
 import { toast } from 'sonner';

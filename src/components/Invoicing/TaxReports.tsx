@@ -25,7 +25,7 @@ import {
   getDocs, 
   orderBy 
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../../firebase';
+
 import { Invoice, Sale } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 

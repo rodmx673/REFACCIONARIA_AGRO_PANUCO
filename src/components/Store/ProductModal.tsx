@@ -19,8 +19,8 @@ import { motion } from 'motion/react';
 import { Product, Review } from '../../types';
 import { useStore } from './StoreContext';
 import { SAMPLE_REVIEWS } from './storeSampleData';
-import { collection, query, where, onSnapshot, addDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
+
+
 import { toast } from 'sonner';
 
 interface ProductModalProps {

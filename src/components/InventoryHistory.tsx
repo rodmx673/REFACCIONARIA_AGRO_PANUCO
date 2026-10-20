@@ -13,8 +13,8 @@ import {
   User,
   FileText
 } from 'lucide-react';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+
+
 import { InventoryMovement, Product, User as UserType } from '../types';
 import { cn, formatDate, formatCurrency } from '../lib/utils';
 import { motion } from 'motion/react';

@@ -26,8 +26,8 @@ import {
   Filter,
   Download
 } from 'lucide-react';
-import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+
+
 import { Sale, Product } from '../types';
 import { formatCurrency } from '../lib/utils';
 import { motion } from 'motion/react';
@@ -38,21 +38,9 @@ export const Reports: React.FC = () => {
   const [timeRange, setTimeRange] = useState('7d');
 
   useEffect(() => {
-    const unsubSales = onSnapshot(collection(db, 'sales'), (snapshot) => {
-      setSales(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sale)));
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'sales');
-    });
-    const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
-      setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'products');
-    });
-    return () => {
-      unsubSales();
-      unsubProducts();
-    };
-  }, []);
+    // Stub temporal hasta migrar a Sheets
+    setLoading(false);
+}, []);
 
   // Process data for charts
   const salesByDay = React.useMemo(() => {

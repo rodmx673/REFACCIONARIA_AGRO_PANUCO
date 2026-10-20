@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product, Order } from '../../types';
-import { collection, onSnapshot, query } from 'firebase/firestore';
-import { db } from '../../firebase';
+
+
 import { StoreProvider, useStore } from './StoreContext';
 import { StoreHeader } from './StoreHeader';
 import { ProductCatalog } from './ProductCatalog';

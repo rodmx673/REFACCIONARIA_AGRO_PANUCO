@@ -36,8 +36,8 @@ import { generateContentWithFallback, parseJsonFromMarkdown } from '../lib/gemin
 import { toast } from 'sonner';
 import { ExtractedInvoiceJSON, InvoiceArticle } from '../types';
 import { cn } from '../lib/utils';
-import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { collection, addDoc } from 'firebase/firestore';
+
+
 import { ImportInvoiceToStockModal } from './Invoicing/ImportInvoiceToStockModal';
 
 const SYSTEM_PROMPT = `

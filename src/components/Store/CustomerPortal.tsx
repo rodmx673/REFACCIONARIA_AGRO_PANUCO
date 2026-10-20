@@ -20,8 +20,8 @@ import {
 import { motion } from 'motion/react';
 import { useStore } from './StoreContext';
 import { Order, Product } from '../../types';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '../../firebase';
+
+
 import { toast } from 'sonner';
 
 interface CustomerPortalProps {

@@ -29,7 +29,7 @@ import {
   doc,
   getDoc
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../../firebase';
+
 import { Sale, Customer, Invoice, SatConfig } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 

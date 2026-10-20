@@ -16,7 +16,7 @@ import {
   Search
 } from 'lucide-react';
 import { generateContentWithFallback } from '../../lib/gemini';
-import { db, auth, handleFirestoreError, OperationType } from '../../firebase';
+
 import { 
   collection, 
   getDocs, 

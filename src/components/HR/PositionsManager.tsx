@@ -17,8 +17,8 @@ import {
   Unlock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../../firebase';
+
+
 import { PositionRole, RolePermissions, Employee } from '../../types';
 import { DEFAULT_POSITIONS, PERMISSION_DEFINITIONS, getRoleBadgeStyle } from '../../lib/permissions';
 import { toast } from 'sonner';

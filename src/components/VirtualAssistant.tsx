@@ -13,8 +13,8 @@ import {
   GripVertical
 } from 'lucide-react';
 import { generateContentWithFallback } from '../lib/gemini';
-import { db } from '../firebase';
-import { collection, getDocs, limit, query } from 'firebase/firestore';
+
+
 import { cn } from '../lib/utils';
 
 interface Message {

@@ -15,8 +15,8 @@ import {
   CheckCircle2,
   RefreshCw
 } from 'lucide-react';
-import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDocs } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+
+
 import { VirtualAssistant, AssistantGlobalSettings } from '../../types';
 import { AssistantCard } from './AssistantCard';
 import { AssistantConfigModal } from './AssistantConfigModal';
