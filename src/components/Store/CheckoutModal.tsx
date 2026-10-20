@@ -156,12 +156,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onOrderSu
       const orderRef = { id: 'ORD-' + Date.now() };
       orderData.id = orderRef.id;
 
-      // 2. Decrement stock atomically and record inventory movements
-      for (const item of cart) {
-        :`, e);
-        }
-      }
-
+            // 2. Decrement stock and record inventory movements (Temporalmente deshabilitado para migrar a Sheets)
+      // TODO: Re-activar cuando se migre la Tienda Online a Apps Script
+      
       // 3. Record in 'sales' for ERP synchronization
       
 
