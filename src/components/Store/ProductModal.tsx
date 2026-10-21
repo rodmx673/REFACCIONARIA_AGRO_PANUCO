@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ShoppingCart, Heart, Share2, Check, Star, Truck, ShieldCheck, Wrench, MapPin, Copy, MessageSquare } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Product, Review } from '../../types';
 import { useStore } from './StoreContext';
 import { SAMPLE_REVIEWS } from './storeSampleData';
@@ -17,6 +17,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, on
   const [quantity, setQuantity] = useState(1);
   const [copiedPartNumber, setCopiedPartNumber] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('details');
+  const [isImageZoomed, setIsImageZoomed] = useState(false);
 
   // Reviews
   const [reviews, setReviews] = useState<Review[]>(SAMPLE_REVIEWS[product.pieceNumber] || []);
@@ -103,8 +104,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, on
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             {/* Image */}
             <div className="space-y-4">
-              <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-50 border border-gray-200/80 group">
-                <img src={product.imageUrl || 'https://picsum.photos/seed/part/600/600'} alt={product.description} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              <div 
+                className="relative w-full h-64 sm:h-80 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200/80 group cursor-zoom-in"
+                onClick={() => setIsImageZoomed(true)}
+              >
+                <img src={product.imageUrl || 'https://picsum.photos/seed/part/600/600'} alt={product.description} className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105" />
                 <div className="absolute top-3 left-3 flex flex-col gap-1.5">
                   <span className="bg-emerald-900/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-xs shadow-sm">{product.brand}</span>
                   {product.category && <span className="bg-white/90 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-sm border border-gray-100">{product.category}</span>}
@@ -230,6 +234,37 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, on
           </div>
         </div>
       </motion.div>
+
+      {/* LIGHTBOX DE ZOOM */}
+      <AnimatePresence>
+        {isImageZoomed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[400] bg-black/95 flex items-center justify-center p-4 touch-auto"
+            onClick={() => setIsImageZoomed(false)}
+          >
+            <button 
+              className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full z-10 transition-colors"
+              onClick={(e) => { e.stopPropagation(); setIsImageZoomed(false); }}
+            >
+              <X size={24} />
+            </button>
+            <motion.img
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              src={product.imageUrl || 'https://picsum.photos/seed/part/600/600'}
+              alt={product.description}
+              className="max-w-full max-h-full object-contain rounded-xl"
+              onClick={(e) => e.stopPropagation()} 
+            />
+            <p className="absolute bottom-6 text-white/50 text-xs font-bold uppercase tracking-widest pointer-events-none">
+              Toca fuera de la imagen para cerrar
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
