@@ -222,11 +222,16 @@ export const AdminPanel: React.FC = () => {
                     </div>
                     <div>
                       <label className="text-xs font-bold text-gray-500 uppercase">Vigencia</label>
-                      <select value={codeHours} onChange={(e) => setCodeHours(Number(e.target.value))} className="w-full mt-1 px-3 py-2 bg-gray-50 border rounded-xl">
+                      <select value={codeHours} onChange={(e) => setCodeHours(Number(e.target.value))} className="w-full mt-1 px-3 py-2 bg-gray-50 border rounded-xl font-medium">
                         <option value={24}>24 horas</option>
                         <option value={72}>3 días</option>
                         <option value={168}>7 días</option>
                         <option value={720}>30 días</option>
+                        <option value={8760}>1 Año</option>
+                        <option value={26280}>3 Años</option>
+                        <option value={43800}>5 Años</option>
+                        <option value={87600}>10 Años</option>
+                        <option value={0}>Ilimitado (Sin expiración)</option>
                       </select>
                     </div>
                   </div>
