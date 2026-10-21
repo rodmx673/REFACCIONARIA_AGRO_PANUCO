@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Search, Edit2, Trash2, Mail, Phone, MapPin, X, AlertCircle } from 'lucide-react';
+import { Users, Plus, Search, Edit2, Trash2, Mail, Phone, MapPin, AlertCircle } from 'lucide-react';
 import { Customer } from '../types';
 import { cn, formatCurrency } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 const URL = import.meta.env.VITE_APPS_SCRIPT_URL;
 
 async function callApi(action: string, data: any = {}) {
-  const res = await fetch(URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, data }) });
+  const res = await fetch(URL, { method: 'POST', body: JSON.stringify({ action, data }) });
   return res.json();
 }
 
@@ -25,8 +25,7 @@ export const Customers: React.FC = () => {
       const res = await callApi('getCustomers');
       if (res.success) setCustomers(res.data || []);
     } catch (e) {
-      // Silencioso: Code.gs aún no tiene getCustomers
-      setCustomers([]);
+      toast.error('Error al cargar clientes de Sheets');
     }
   };
 
@@ -44,7 +43,7 @@ export const Customers: React.FC = () => {
       setDeleteConfirm(null);
       toast.success('Cliente eliminado');
     } catch (error) {
-      toast.error('Error al eliminar');
+      toast.error('Error al eliminar cliente');
     }
   };
 
@@ -73,9 +72,14 @@ export const Customers: React.FC = () => {
               </div>
             </div>
             <div className="space-y-3 mb-6">
-              <div className="flex items-center gap-3 text-sm text-gray-500"><Mail size={16} /><span className="truncate">{customer.email}</span></div>
-              <div className="flex items-center gap-3 text-sm text-gray-500"><Phone size={16} /><span>{customer.phone}</span></div>
-              <div className="flex items-center gap-3 text-sm text-gray-500"><MapPin size={16} /><span>{customer.address?.city}</span></div>
+              <div className="flex items-center gap-3 text-sm text-gray-500"><Mail size={16} /><span className="truncate">{customer.email || 'Sin correo'}</span></div>
+              <div className="flex items-center gap-3 text-sm text-gray-500"><Phone size={16} /><span>{customer.phone || 'Sin teléfono'}</span></div>
+              <div className="flex items-start gap-3 text-sm text-gray-500">
+                <MapPin size={16} className="mt-0.5 shrink-0" />
+                <span className="truncate text-xs">
+                  {customer.address?.street} {customer.address?.number}, Col. {customer.address?.colony}, {customer.address?.city}
+                </span>
+              </div>
             </div>
             <div className="pt-4 border-t border-gray-50 flex justify-between">
               <div><p className="text-[10px] font-bold text-gray-400 uppercase">Saldo</p><p className="text-lg font-black text-primary">{formatCurrency(customer.balance)}</p></div>
