@@ -52,6 +52,8 @@ export const Inventory: React.FC = () => {
   const [showStats, setShowStats] = useState(false);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [references, setReferences] = useState<any[]>([]);
+  const [additionalImages, setAdditionalImages] = useState<string[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const [formData, setFormData] = useState<Partial<Product>>({
     pieceNumber: '',
@@ -109,10 +111,18 @@ export const Inventory: React.FC = () => {
     }
   };
 
-  useEffect(() => {
+    useEffect(() => {
     loadData();
     fetchVendors();
   }, []);
+
+  // Auto-cerrar notificaciones después de 4 segundos
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const filteredProducts = products.filter(p => {
     const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 0);
@@ -152,6 +162,25 @@ export const Inventory: React.FC = () => {
     const data = await response.json();
     if (data.secure_url) return data.secure_url;
     throw new Error(data.error?.message || 'Error al subir imagen a Cloudinary');
+  };
+
+  const handleAdditionalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingImage(true);
+    try {
+      const base64Data = await fileToBase64(file);
+      const originalDataUri = `data:` + (file.type || 'image/jpeg') + `;base64,` + base64Data;
+      const compressed = await compressImage(originalDataUri, 800, 0.75);
+      const cloudinaryUrl = await uploadToCloudinary(compressed);
+      setAdditionalImages(prev => [...prev, cloudinaryUrl]);
+      toast.success('Imagen agregada a la galería');
+    } catch (error) {
+      toast.error('Error al subir imagen');
+    } finally {
+      setIsUploadingImage(false);
+      e.target.value = '';
+    }
   };
 
   const handleScan = async (file: File) => {
@@ -245,7 +274,8 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
       const payload = {
         ...formData,
         invoiceReference: sanitizedInvoiceRef,
-        references: JSON.stringify(references)
+        references: JSON.stringify(references),
+        images: JSON.stringify(additionalImages)
       };
 
       if (editingProduct) {
@@ -324,9 +354,13 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
       if (product.references && typeof product.references === 'string') setReferences(JSON.parse(product.references));
       else if (Array.isArray(product.references)) setReferences(product.references);
       else setReferences([]);
-    } catch (e) {
-      setReferences([]);
-    }
+    } catch (e) { setReferences([]); }
+    
+    try {
+      if (product.images && typeof product.images === 'string') setAdditionalImages(JSON.parse(product.images));
+      else if (Array.isArray(product.images)) setAdditionalImages(product.images);
+      else setAdditionalImages([]);
+    } catch (e) { setAdditionalImages([]); }
     setIsModalOpen(true);
   };
 
@@ -419,8 +453,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
           <button
             onClick={() => {
               setEditingProduct(null);
-              setReferences([]);
-              setFormData({ pieceNumber: '', description: '', brand: 'MF', model: '', category: 'Motor', purchasePrice: 0, salePrice: 0, stock: 0, minStock: 5, maxStock: 50, location: 'PB-01-A', imageUrl: '', barcode: '', vendorId: '', leadTime: 7, invoiceReference: '' });
+              setReferences([]); setAdditionalImages([]); setFormData({ pieceNumber: '', description: '', brand: 'MF', model: '', category: 'Motor', purchasePrice: 0, salePrice: 0, stock: 0, minStock: 5, maxStock: 50, location: 'PB-01-A', imageUrl: '', barcode: '', vendorId: '', leadTime: 7, invoiceReference: '' });
               setIsModalOpen(true);
             }}
             className="flex-1 lg:flex-none flex items-center justify-center gap-1.5 px-3.5 sm:px-6 py-2.5 sm:py-3 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/20 hover:opacity-90 transition-all text-xs sm:text-sm"
@@ -654,10 +687,51 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
                   {isScanning && (<div className="absolute bottom-0 left-0 h-1 bg-primary transition-all duration-300" style={{ width: `${scanProgress}%` }} />)}
                 </div>
 
+                {/* GALERÍA DE IMÁGENES ADICIONALES */}
+                <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-xs font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
+                        Galería de Imágenes del Producto
+                        <span className="text-[10px] text-gray-500 normal-case bg-white px-2 py-0.5 rounded-full border border-gray-200">Opcional</span>
+                      </label>
+                      <p className="text-[10px] text-gray-400 mt-1">Agrega fotos reales del producto (ángulos, detalles) para la tienda online.</p>
+                    </div>
+                    <label className="cursor-pointer bg-primary text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 hover:opacity-90 transition-all">
+                      {isUploadingImage ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                      {isUploadingImage ? 'Subiendo...' : 'Agregar Foto'}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleAdditionalImageUpload} disabled={isUploadingImage} />
+                    </label>
+                  </div>
+
+                  {additionalImages.length === 0 ? (
+                    <div className="text-center p-4 bg-white rounded-lg border border-dashed border-gray-200">
+                      <ImageIcon size={24} className="mx-auto text-gray-300 mb-1" />
+                      <p className="text-[10px] text-gray-400">Aún no hay imágenes adicionales en la galería.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                      {additionalImages.map((img, idx) => (
+                        <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white">
+                          <img src={img} alt={`Galería ${idx + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setAdditionalImages(prev => prev.filter((_, i) => i !== idx))}
+                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                            title="Eliminar imagen"
+                          >
+                            <X size={10} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Número de Pieza</label>
-                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium" value={formData.pieceNumber} onChange={e => setFormData({...formData, pieceNumber: e.target.value})} />
+                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium" value={formData.pieceNumber} onChange={e => setFormData({...formData, pieceNumber: e.target.value.toUpperCase()})} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Marca</label>
@@ -667,7 +741,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
                   </div>
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Descripción</label>
-                    <textarea required className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium h-24 resize-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                    <textarea required className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium h-24 resize-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value.toUpperCase()})} />
                   </div>
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center justify-between">
@@ -738,7 +812,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
                     </div>
                     <div className="relative">
                       <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                      <input id="product-invoice-reference-input" type="text" placeholder="Ej: FAC-2024-0048, Folio Fiscal SAT o UUID" className="w-full pl-11 pr-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium text-gray-800 placeholder:text-gray-400" value={formData.invoiceReference || ''} onChange={e => setFormData({...formData, invoiceReference: e.target.value})} />
+                      <input id="product-invoice-reference-input" type="text" placeholder="Ej: FAC-2024-0048, Folio Fiscal SAT o UUID" className="w-full pl-11 pr-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium text-gray-800 placeholder:text-gray-400" value={formData.invoiceReference || ''} onChange={e => setFormData({...formData, invoiceReference: e.target.value.toUpperCase()})} />
                     </div>
                     <p className="text-[11px] text-gray-500">Vincula esta pieza específica con el comprobante o documento fiscal correspondiente.</p>
                   </div>
@@ -747,7 +821,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <Barcode className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                        <input type="text" placeholder="Escanea o ingresa el código" className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium" value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})} />
+                        <input type="text" placeholder="Escanea o ingresa el código" className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium" value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value.toUpperCase()})} />
                       </div>
                       <button type="button" onClick={() => setIsBarcodeScannerOpen(true)} className="px-4 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all flex items-center gap-2"><Camera size={20} />Escanear</button>
                     </div>

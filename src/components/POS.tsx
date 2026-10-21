@@ -95,7 +95,8 @@ export const POS: React.FC = () => {
   }, []);
 
   const filteredProducts = useMemo(() => {
-    return products.filter(p => {
+    // 1. Filtrar por búsqueda, categoría y marca
+    const filtered = products.filter(p => {
       const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 0);
       const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => 
         p.pieceNumber.toLowerCase().includes(term) ||
@@ -108,6 +109,16 @@ export const POS: React.FC = () => {
       const matchesBrand = !selectedBrand || p.brand === selectedBrand;
       return matchesSearch && matchesCategory && matchesBrand;
     });
+
+    // 2. Eliminar duplicados por número de pieza (por si en Sheets hay filas repetidas)
+    const uniqueMap = new Map();
+    filtered.forEach(p => {
+      if (!uniqueMap.has(p.pieceNumber)) {
+        uniqueMap.set(p.pieceNumber, p);
+      }
+    });
+
+    return Array.from(uniqueMap.values());
   }, [products, searchQuery, selectedCategory, selectedBrand]);
 
   const addToCart = (product: Product) => {

@@ -192,7 +192,7 @@ export const Vendors: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre de la Empresa</label>
-                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-primary transition-all font-medium" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-primary transition-all font-medium" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value.toUpperCase()})} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tipo</label>
@@ -203,11 +203,11 @@ export const Vendors: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">RFC / Tax ID</label>
-                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-primary transition-all font-medium" value={formData.rfc} onChange={e => setFormData({...formData, rfc: e.target.value})} />
+                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-primary transition-all font-medium" value={formData.rfc} onChange={e => setFormData({...formData, rfc: e.target.value.toUpperCase()})} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Contacto Principal</label>
-                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-primary transition-all font-medium" value={formData.contact} onChange={e => setFormData({...formData, contact: e.target.value})} />
+                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-primary transition-all font-medium" value={formData.contact} onChange={e => setFormData({...formData, contact: e.target.value.toUpperCase()})} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Email</label>
@@ -219,7 +219,7 @@ export const Vendors: React.FC = () => {
                   </div>
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Dirección</label>
-                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-primary transition-all font-medium" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                    <input required type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-primary transition-all font-medium" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value.toUpperCase()})} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Lead Time (Días)</label>

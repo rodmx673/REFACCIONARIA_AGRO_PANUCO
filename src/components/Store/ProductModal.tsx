@@ -17,6 +17,18 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, on
   const [quantity, setQuantity] = useState(1);
   const [copiedPartNumber, setCopiedPartNumber] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('details');
+  const allImages = React.useMemo(() => {
+    const imgs: string[] = [];
+    if (product.imageUrl) imgs.push(product.imageUrl);
+    try {
+      if (product.images) {
+        const parsed = typeof product.images === 'string' ? JSON.parse(product.images) : product.images;
+        if (Array.isArray(parsed)) imgs.push(...parsed.filter(Boolean));
+      }
+    } catch {}
+    return imgs.length > 0 ? imgs : ['https://picsum.photos/seed/part/600/600'];
+  }, [product.imageUrl, product.images]);
+  const [activeImage, setActiveImage] = useState(allImages[0]);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
 
   // Reviews
@@ -108,7 +120,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, on
                 className="relative w-full h-64 sm:h-80 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200/80 group cursor-zoom-in"
                 onClick={() => setIsImageZoomed(true)}
               >
-                <img src={product.imageUrl || 'https://picsum.photos/seed/part/600/600'} alt={product.description} className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105" />
+                <img src={activeImage} alt={product.description} className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105" />
                 <div className="absolute top-3 left-3 flex flex-col gap-1.5">
                   <span className="bg-emerald-900/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-xs shadow-sm">{product.brand}</span>
                   {product.category && <span className="bg-white/90 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-sm border border-gray-100">{product.category}</span>}
@@ -117,6 +129,19 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, on
                   <Heart size={20} className={isWish ? 'fill-rose-500' : ''} />
                 </button>
               </div>
+              {allImages.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  {allImages.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImage(img)}
+                      className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${activeImage === img ? 'border-emerald-600 ring-2 ring-emerald-200' : 'border-gray-200 hover:border-gray-300'}`}
+                    >
+                      <img src={img} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                 <div className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-xl border border-gray-100"><Truck size={16} className="text-emerald-700 shrink-0" /><span className="text-[11px] font-medium">Envío por FedEx / Estafeta</span></div>
                 <div className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-xl border border-gray-100"><ShieldCheck size={16} className="text-emerald-700 shrink-0" /><span className="text-[11px] font-medium">Garantía de compatibilidad</span></div>
@@ -254,7 +279,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, on
             <motion.img
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
-              src={product.imageUrl || 'https://picsum.photos/seed/part/600/600'}
+              src={activeImage}
               alt={product.description}
               className="max-w-full max-h-full object-contain rounded-xl"
               onClick={(e) => e.stopPropagation()} 
