@@ -248,11 +248,11 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors: string[] = [];
-    if (!formData.pieceNumber?.trim()) errors.push("• El Número de Pieza es obligatorio.");
-    if (!formData.description?.trim()) errors.push("• La Descripción es obligatoria.");
-    if (!formData.brand?.trim()) errors.push("• Debes seleccionar una Marca.");
-    if (!formData.category?.trim()) errors.push("• Debes seleccionar una Categoría.");
-    if (!formData.location?.trim()) errors.push("• La Ubicación es obligatoria.");
+    if (!String(formData.pieceNumber || '').trim()) errors.push("• El Número de Pieza es obligatorio.");
+    if (!String(formData.description || '').trim()) errors.push("• La Descripción es obligatoria.");
+    if (!String(formData.brand || '').trim()) errors.push("• Debes seleccionar una Marca.");
+    if (!String(formData.category || '').trim()) errors.push("• Debes seleccionar una Categoría.");
+    if (!String(formData.location || '').trim()) errors.push("• La Ubicación es obligatoria.");
     if (formData.purchasePrice === undefined || formData.purchasePrice < 0) errors.push("• El Precio de Compra debe ser 0 o mayor.");
     if (formData.salePrice === undefined || formData.salePrice <= 0) errors.push("• El Precio de Venta debe ser mayor a 0.");
     if (formData.stock === undefined || formData.stock < 0) errors.push("• El Stock Inicial no puede ser negativo.");
@@ -270,7 +270,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
     }
 
     try {
-      const sanitizedInvoiceRef = formData.invoiceReference?.trim() || '';
+      const sanitizedInvoiceRef = String(formData.invoiceReference || '').trim() || '';
       const payload = {
         ...formData,
         invoiceReference: sanitizedInvoiceRef,
@@ -639,13 +639,13 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
       {/* Add/Edit Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden">
-              <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+              <div className="p-4 sm:p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50 shrink-0">
                 <h3 className="text-xl font-bold text-gray-900">{editingProduct ? 'Editar Producto' : 'Nuevo Producto'}</h3>
                 <button onClick={() => setIsModalOpen(false)} className="p-2 text-gray-400 hover:bg-white rounded-xl transition-all"><X size={24} /></button>
               </div>
-              <form onSubmit={handleSave} className="p-4 sm:p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+              <form onSubmit={handleSave} className="p-4 sm:p-8 space-y-6 flex-1 overflow-y-auto overscroll-contain">
                 <div
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                   onDragLeave={() => setIsDragging(false)}
@@ -847,15 +847,15 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
       {/* Product Detail Modal */}
       <AnimatePresence>
         {selectedProductDetail && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedProductDetail(null)}>
-            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col md:flex-row">
-              <div className="w-full md:w-1/2 bg-gray-50 p-6 flex flex-col items-center justify-center relative overflow-hidden group">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto overscroll-contain" onClick={() => setSelectedProductDetail(null)}>
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto flex flex-col md:flex-row">
+              <div className="w-full md:w-1/2 bg-gray-50 p-4 sm:p-6 flex flex-col items-center justify-center relative overflow-hidden group shrink-0">
                 {selectedProductDetail.imageUrl ? (
                   <img src={selectedProductDetail.imageUrl} alt={selectedProductDetail.description} className="w-full h-64 md:h-80 object-contain transition-transform duration-500 group-hover:scale-150 cursor-zoom-in" />
                 ) : (<Package size={80} className="text-gray-300" />)}
                 <span className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-gray-600 border border-gray-200">{selectedProductDetail.brand}</span>
               </div>
-              <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
+              <div className="w-full md:w-1/2 p-6 flex flex-col justify-between md:overflow-visible">
                 <div className="space-y-4">
                   <div className="flex justify-between items-start">
                     <div>
