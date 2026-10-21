@@ -42,7 +42,7 @@ export const Settings: React.FC = () => {
 
   useEffect(() => {
     // Firebase eliminado
-    return () => unsub();
+    
   }, []);
 
   const handleSave = async () => {

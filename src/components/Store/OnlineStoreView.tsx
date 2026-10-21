@@ -38,7 +38,7 @@ const OnlineStoreInner: React.FC<OnlineStoreViewProps> = ({ onOpenERP }) => {
   useEffect(() => {
     // Firebase eliminado
     // Firebase eliminado
-    return () => unsub();
+    
   }, []);
 
   return (

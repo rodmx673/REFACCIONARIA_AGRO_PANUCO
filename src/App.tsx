@@ -25,7 +25,6 @@ import { OCRInvoiceReader } from './components/OCRInvoiceReader';
 import { InvoiceHistory } from './components/InvoiceHistory';
 import { OnlineStoreView } from './components/Store/OnlineStoreView';
 import { OnlineOrdersManager } from './components/Store/OnlineOrdersManager';
-import { AdminPanel } from './components/AdminPanel';
 
 import { BarChart3, Settings as SettingsIcon, AlertCircle } from 'lucide-react';
 
@@ -130,4 +129,3 @@ export default function App() {
     </ErrorBoundary>
   );
 }
-

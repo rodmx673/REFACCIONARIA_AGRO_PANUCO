@@ -57,7 +57,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     // Firebase eliminado
     // Firebase eliminado
 
-    return () => unsub();
+    
   }, [emailInput]);
 
   const handleSearchEmail = (e: React.FormEvent) => {

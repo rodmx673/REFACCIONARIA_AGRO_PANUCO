@@ -71,7 +71,7 @@ export const PositionsManager: React.FC<PositionsManagerProps> = ({
   useEffect(() => {
     // Firebase eliminado
 
-    return () => unsub();
+    
   }, []);
 
   // When selected position changes, reset editing state

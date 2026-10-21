@@ -73,6 +73,7 @@ export const Layout: React.FC<{
   const [showNotifications, setShowNotifications] = useState(false);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const prevLowStockIds = useRef<Set<string>>(new Set());
+  const contentScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -117,6 +118,14 @@ export const Layout: React.FC<{
       clearInterval(interval);
     };
   }, [user, setActiveTab]);
+
+  // Hacer scroll hacia arriba automáticamente al cambiar de página
+  useEffect(() => {
+    if (contentScrollRef.current) {
+      contentScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    setMobileMenuOpen(false); // Cerrar menú móvil si estaba abierto
+  }, [activeTab]);
 
   const navItems = [
     { id: 'pos', label: 'Punto de Venta', icon: ShoppingCart, roles: ['ADMIN', 'GERENTE', 'CLERK', 'VENTAS', 'CAJERO', 'VENDEDOR'], perm: 'canAccessPOS' },
@@ -166,8 +175,12 @@ export const Layout: React.FC<{
         animate={{ width: collapsed ? 80 : 280 }}
         className="hidden lg:flex flex-col bg-white border-r border-gray-100 shadow-sm relative z-30"
       >
-        <div className="p-6 flex items-center gap-3 border-b border-gray-50 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-lg">
+        <div 
+          onClick={() => setActiveTab('pos')} 
+          className="p-6 flex items-center gap-3 border-b border-gray-50 mb-6 cursor-pointer hover:bg-gray-50 transition-colors group"
+          title="Ir al Punto de Venta (Home)"
+        >
+          <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-lg group-hover:scale-105 transition-transform">
             <Tractor size={24} />
           </div>
           {!collapsed && (
@@ -261,7 +274,13 @@ export const Layout: React.FC<{
         className="fixed top-0 bottom-0 left-0 w-72 bg-white z-50 lg:hidden flex flex-col shadow-2xl"
       >
         <div className="p-6 flex items-center justify-between border-b border-gray-50">
-          <div className="flex items-center gap-3">
+          <div 
+          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => {
+            setActiveTab('pos');
+            setMobileMenuOpen(false); // Cierra el menú al ir al Home
+          }}
+        >
             <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg">
               <Tractor size={24} />
             </div>
@@ -440,7 +459,7 @@ export const Layout: React.FC<{
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 lg:p-6 relative max-w-full min-w-0">
+        <div ref={contentScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 lg:p-6 relative max-w-full min-w-0">
           {children}
         </div>
         <MultiAssistantChat />
