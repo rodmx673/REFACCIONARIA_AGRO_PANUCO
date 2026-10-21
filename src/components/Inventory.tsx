@@ -36,6 +36,7 @@ export const Inventory: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
@@ -331,6 +332,8 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
     } catch (error) {
       console.error('Error saving product:', error);
       setNotification({ message: 'Error al guardar el producto. Por favor, intenta de nuevo.', type: 'error' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
