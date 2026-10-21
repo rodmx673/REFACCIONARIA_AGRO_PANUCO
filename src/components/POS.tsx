@@ -98,12 +98,19 @@ export const POS: React.FC = () => {
     // 1. Filtrar por búsqueda, categoría y marca
     const filtered = products.filter(p => {
       const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 0);
+      // IMPORTANTE: Convertir a String() por si Sheets devuelve números
+      const pieceNumber = String(p.pieceNumber || '').toLowerCase();
+      const description = String(p.description || '').toLowerCase();
+      const brand = String(p.brand || '').toLowerCase();
+      const model = String(p.model || '').toLowerCase();
+      const barcode = String(p.barcode || '').toLowerCase();
+      
       const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => 
-        p.pieceNumber.toLowerCase().includes(term) ||
-        p.description.toLowerCase().includes(term) ||
-        p.brand.toLowerCase().includes(term) ||
-        p.model.toLowerCase().includes(term) ||
-        (p.barcode && p.barcode.toLowerCase().includes(term))
+        pieceNumber.includes(term) ||
+        description.includes(term) ||
+        brand.includes(term) ||
+        model.includes(term) ||
+        barcode.includes(term)
       );
       const matchesCategory = !selectedCategory || p.category === selectedCategory;
       const matchesBrand = !selectedBrand || p.brand === selectedBrand;
@@ -889,8 +896,8 @@ export const POS: React.FC = () => {
           onScan={(code) => {
             const cleanCode = code.trim().toLowerCase();
             const matchedProduct = products.find(p => 
-              p.pieceNumber.toLowerCase() === cleanCode || 
-              (p.barcode && p.barcode.toLowerCase() === cleanCode) ||
+              String(p.pieceNumber || '').toLowerCase() === cleanCode || 
+              (p.barcode && String(p.barcode || '').toLowerCase() === cleanCode) ||
               p.id === code.trim()
             );
 
