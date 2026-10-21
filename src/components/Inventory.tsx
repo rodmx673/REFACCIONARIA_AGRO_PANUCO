@@ -67,6 +67,7 @@ export const Inventory: React.FC = () => {
   const [filterBrand, setFilterBrand] = useState<string>('All');
   const [filterCategory, setFilterCategory] = useState<string>('All');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [references, setReferences] = useState<any[]>([]);
   // Estado del formulario de producto
@@ -408,7 +409,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         {(() => {
           // Limpiamos los datos para evitar errores con filas vacías de Sheets
           const validProducts = products.filter(p => p && (p.pieceNumber || p.description));
@@ -432,13 +433,13 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
             { label: 'Movimientos Hoy', value: movementsToday, icon: History, color: 'bg-purple-500' },
           ];
         })().map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg", stat.color)}>
-              <stat.icon size={24} />
+          <div key={i} className="bg-white p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className={cn("w-8 h-8 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-lg shrink-0", stat.color)}>
+              <stat.icon size={16} className="sm:w-6 sm:h-6" />
             </div>
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{stat.label}</p>
-              <p className="text-xl font-black text-gray-900">{stat.value}</p>
+              <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider leading-tight">{stat.label}</p>
+              <p className="text-sm sm:text-xl font-black text-gray-900 mt-0.5">{stat.value}</p>
             </div>
           </div>
         ))}
@@ -488,6 +489,15 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
           >
             <History size={16} />
             <span>Historial</span>
+          </button>
+          <button 
+            onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
+            className="flex-1 lg:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-5 py-2.5 sm:py-3 bg-white text-gray-700 rounded-xl font-semibold border border-gray-200 hover:bg-gray-50 transition-all text-xs sm:text-sm"
+            title="Cambiar Vista"
+          >
+            {viewMode === 'table' ? <LayoutGrid size={16} /> : <List size={16} />}
+            <span className="hidden sm:inline">{viewMode === 'table' ? 'Cuadrícula' : 'Tabla'}</span>
+            <span className="sm:hidden">{viewMode === 'table' ? 'Grid' : 'Lista'}</span>
           </button>
           <button 
             id="inventory-qr-labels-btn"
@@ -593,7 +603,8 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
         )}
       </AnimatePresence>
 
-      {/* Product Table */}
+      {/* Product List Container */}
+      {viewMode === 'table' ? (
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -716,6 +727,46 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
           </table>
         </div>
       </div>
+      ) : (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+        {filteredProducts.map(product => (
+          <div key={product.id} className="bg-white rounded-2xl p-3 sm:p-4 border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative group" onClick={() => openEdit(product)}>
+            <div>
+              <div className="aspect-square bg-gray-50 rounded-xl mb-3 flex items-center justify-center overflow-hidden border border-gray-100">
+                {product.imageUrl ? (
+                  <img src={product.imageUrl} alt={product.pieceNumber} className="w-full h-full object-cover" />
+                ) : (
+                  <Package size={32} className="text-gray-300" />
+                )}
+              </div>
+              <div className="flex items-start justify-between gap-1 mb-1">
+                <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate">{product.brand}</span>
+                {product.stock <= product.minStock && <AlertTriangle size={14} className="text-red-500 shrink-0" />}
+              </div>
+              <h3 className="font-bold text-gray-900 text-xs sm:text-sm truncate">{product.pieceNumber}</h3>
+              <p className="text-[11px] text-gray-500 line-clamp-2 mt-0.5 leading-tight">{product.description}</p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-gray-50 flex items-end justify-between">
+              <div>
+                <p className="text-[10px] text-gray-400 font-bold uppercase">Precio</p>
+                <p className="font-black text-primary text-sm sm:text-base">{formatCurrency(product.salePrice)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-gray-400 font-bold uppercase">Stock</p>
+                <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", product.stock <= product.minStock ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600")}>
+                  {product.stock}
+                </span>
+              </div>
+            </div>
+            {/* Overlay actions */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-2xl flex items-center justify-center gap-2 transition-opacity pointer-events-none sm:pointer-events-auto">
+               <button onClick={(e) => { e.stopPropagation(); openEdit(product); }} className="p-2 bg-white text-gray-900 rounded-full shadow-lg hover:scale-110 transition-transform"><Edit2 size={16} /></button>
+               <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(product.id); }} className="p-2 bg-white text-red-600 rounded-full shadow-lg hover:scale-110 transition-transform"><Trash2 size={16} /></button>
+            </div>
+          </div>
+        ))}
+      </div>
+      )}
 
       {/* Notifications */}
       <AnimatePresence>
