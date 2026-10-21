@@ -796,7 +796,7 @@ export const POS: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto overscroll-contain"
             onClick={() => setSelectedProductDetail(null)}
           >
             <motion.div
@@ -804,10 +804,10 @@ export const POS: React.FC = () => {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col md:flex-row"
+              className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto flex flex-col md:flex-row"
             >
               {/* Image Section with Hover Zoom */}
-              <div className="w-full md:w-1/2 bg-gray-50 p-6 flex flex-col items-center justify-center relative overflow-hidden group">
+              <div className="w-full md:w-1/2 bg-gray-50 p-4 sm:p-6 flex flex-col items-center justify-center relative overflow-hidden group shrink-0">
                 {selectedProductDetail.imageUrl ? (
                   <img 
                     src={selectedProductDetail.imageUrl} 
@@ -823,7 +823,7 @@ export const POS: React.FC = () => {
               </div>
 
               {/* Details Section */}
-              <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
+              <div className="w-full md:w-1/2 p-6 flex flex-col justify-between shrink-0">
                 <div className="space-y-4">
                   <div className="flex justify-between items-start">
                     <div>
