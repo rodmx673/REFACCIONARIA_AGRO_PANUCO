@@ -115,6 +115,11 @@ export const Inventory: React.FC = () => {
     useEffect(() => {
     loadData();
     fetchVendors();
+    // Forzar que los filtros estén en 'All' al montar la página
+    setFilterBrand('All');
+    setFilterCategory('All');
+    setFilterLowStock(false);
+    setSearchQuery('');
   }, []);
 
   // Auto-cerrar notificaciones después de 4 segundos
@@ -126,29 +131,29 @@ export const Inventory: React.FC = () => {
   }, [notification]);
 
   const filteredProducts = products.filter(p => {
-    const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 0);
+    if (!p) return false;
     
-    // BLINDAJE: Convertimos todo a String() por si Sheets los devuelve como números
-    const pieceNumber = String(p.pieceNumber || '').toLowerCase();
-    const description = String(p.description || '').toLowerCase();
-    const brand = String(p.brand || '').toLowerCase();
-    const model = String(p.model || '').toLowerCase();
-    const barcode = String(p.barcode || '').toLowerCase();
-    const invoiceRef = String(p.invoiceReference || '').toLowerCase();
+    // 1. Filtro de Búsqueda
+    const term = searchQuery.toLowerCase().trim();
+    if (term) {
+      const match = 
+        String(p.pieceNumber || '').toLowerCase().includes(term) ||
+        String(p.description || '').toLowerCase().includes(term) ||
+        String(p.brand || '').toLowerCase().includes(term) ||
+        String(p.model || '').toLowerCase().includes(term) ||
+        String(p.barcode || '').toLowerCase().includes(term) ||
+        String(p.invoiceReference || '').toLowerCase().includes(term);
+      if (!match) return false;
+    }
 
-    const matchesSearch = searchTerms.length === 0 || searchTerms.every(term =>
-      pieceNumber.includes(term) ||
-      description.includes(term) ||
-      brand.includes(term) ||
-      model.includes(term) ||
-      barcode.includes(term) ||
-      invoiceRef.includes(term)
-    );
-    const matchesLowStock = filterLowStock ? Number(p.stock) <= Number(p.minStock) : true;
-    const matchesBrand = filterBrand === 'All' || p.brand === filterBrand;
-    const matchesCategory = filterCategory === 'All' || p.category === filterCategory;
-    
-    return matchesSearch && matchesLowStock && matchesBrand && matchesCategory;
+    // 2. Filtro de Stock Bajo
+    if (filterLowStock && Number(p.stock) > Number(p.minStock)) return false;
+
+    // 3. Filtro de Marca y Categoría
+    if (filterBrand !== 'All' && p.brand !== filterBrand) return false;
+    if (filterCategory !== 'All' && p.category !== filterCategory) return false;
+
+    return true;
   });
 
   const fileToBase64 = (file: File): Promise<string> => {
