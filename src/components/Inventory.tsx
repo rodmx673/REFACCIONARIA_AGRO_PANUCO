@@ -65,7 +65,7 @@ export const Inventory: React.FC = () => {
     purchasePrice: 0,
     salePrice: 0,
     stock: 0,
-    minStock: 5,
+    minStock: 2,
     maxStock: 50,
     location: 'PB-01-A',
     imageUrl: '',
@@ -326,7 +326,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
       setReferences([]);
       setFormData({
         pieceNumber: '', description: '', brand: 'MF', model: '', category: 'Motor',
-        purchasePrice: 0, salePrice: 0, stock: 0, minStock: 5, maxStock: 50,
+        purchasePrice: 0, salePrice: 0, stock: 0, minStock: 2, maxStock: 50,
         location: 'PB-01-A', imageUrl: '', barcode: '', vendorId: '', leadTime: 7, invoiceReference: ''
       });
     } catch (error) {
@@ -456,7 +456,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
           <button
             onClick={() => {
               setEditingProduct(null);
-              setReferences([]); setAdditionalImages([]); setFormData({ pieceNumber: '', description: '', brand: 'MF', model: '', category: 'Motor', purchasePrice: 0, salePrice: 0, stock: 0, minStock: 5, maxStock: 50, location: 'PB-01-A', imageUrl: '', barcode: '', vendorId: '', leadTime: 7, invoiceReference: '' });
+              setReferences([]); setAdditionalImages([]); setFormData({ pieceNumber: '', description: '', brand: 'MF', model: '', category: 'Motor', purchasePrice: 0, salePrice: 0, stock: 0, minStock: 2, maxStock: 50, location: 'PB-01-A', imageUrl: '', barcode: '', vendorId: '', leadTime: 7, invoiceReference: '' });
               setIsModalOpen(true);
             }}
             className="flex-1 lg:flex-none flex items-center justify-center gap-1.5 px-3.5 sm:px-6 py-2.5 sm:py-3 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/20 hover:opacity-90 transition-all text-xs sm:text-sm"
@@ -794,6 +794,32 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Stock Inicial</label>
                     <input required type="number" className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium" value={formData.stock} onChange={e => setFormData({...formData, stock: Number(e.target.value)})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Stock Inicial</label>
+                    <input 
+                      required
+                      type="number" 
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium"
+                      value={formData.stock}
+                      onChange={e => setFormData({...formData, stock: Number(e.target.value)})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                      Stock Mínimo (Alerta)
+                      <span className="text-[10px] text-primary font-bold bg-primary/10 px-1.5 py-0.5 rounded normal-case">Manual</span>
+                    </label>
+                    <input 
+                      required
+                      type="number" 
+                      min="0"
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium"
+                      value={formData.minStock}
+                      onChange={e => setFormData({...formData, minStock: Number(e.target.value)})}
+                      placeholder="Ej. 2"
+                    />
+                    <p className="text-[10px] text-gray-400">Cantidad mínima antes de mostrar la alerta de "Stock Bajo".</p>
                   </div>
                   <LocationPicker value={formData.location || 'PB-01-A'} onChange={(val) => setFormData({...formData, location: val})} />
                   <div className="space-y-2">
