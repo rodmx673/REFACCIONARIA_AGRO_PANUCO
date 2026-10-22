@@ -127,17 +127,27 @@ export const Inventory: React.FC = () => {
 
   const filteredProducts = products.filter(p => {
     const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 0);
+    
+    // BLINDAJE: Convertimos todo a String() por si Sheets los devuelve como números
+    const pieceNumber = String(p.pieceNumber || '').toLowerCase();
+    const description = String(p.description || '').toLowerCase();
+    const brand = String(p.brand || '').toLowerCase();
+    const model = String(p.model || '').toLowerCase();
+    const barcode = String(p.barcode || '').toLowerCase();
+    const invoiceRef = String(p.invoiceReference || '').toLowerCase();
+
     const matchesSearch = searchTerms.length === 0 || searchTerms.every(term =>
-      p.pieceNumber.toLowerCase().includes(term) ||
-      p.description.toLowerCase().includes(term) ||
-      p.brand.toLowerCase().includes(term) ||
-      p.model.toLowerCase().includes(term) ||
-      (p.barcode && p.barcode.toLowerCase().includes(term)) ||
-      (p.invoiceReference && p.invoiceReference.toLowerCase().includes(term))
+      pieceNumber.includes(term) ||
+      description.includes(term) ||
+      brand.includes(term) ||
+      model.includes(term) ||
+      barcode.includes(term) ||
+      invoiceRef.includes(term)
     );
-    const matchesLowStock = filterLowStock ? p.stock <= p.minStock : true;
+    const matchesLowStock = filterLowStock ? Number(p.stock) <= Number(p.minStock) : true;
     const matchesBrand = filterBrand === 'All' || p.brand === filterBrand;
     const matchesCategory = filterCategory === 'All' || p.category === filterCategory;
+    
     return matchesSearch && matchesLowStock && matchesBrand && matchesCategory;
   });
 
