@@ -727,7 +727,94 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
         )}
       </AnimatePresence>
 
-      {isBarcodeScannerOpen && (
+            {/* TABLA Y GRID DE PRODUCTOS */}
+      {viewMode === 'table' ? (
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50/50 border-b border-gray-50">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Producto</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Marca/Modelo</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Categoría</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Precio Venta</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Stock</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Ubicación</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filteredProducts.length === 0 ? (
+                  <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-400">No se encontraron productos con los filtros actuales.</td></tr>
+                ) : filteredProducts.map(product => (
+                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
+                    <td className="px-6 py-4 cursor-pointer" onClick={() => setSelectedProductDetail(product)}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                          {product.imageUrl ? <img src={product.imageUrl} alt={product.pieceNumber} className="w-full h-full object-cover" /> : <Package size={20} className="text-gray-400" />}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900">{product.pieceNumber}</p>
+                          <p className="text-xs text-gray-500 truncate max-w-[200px]">{product.description}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded-md mr-2">{product.brand}</span>
+                      <span className="text-xs text-gray-500">{product.model}</span>
+                    </td>
+                    <td className="px-6 py-4"><span className="text-xs font-medium text-gray-600">{product.category}</span></td>
+                    <td className="px-6 py-4 text-right">
+                      <p className="font-bold text-gray-900">{formatCurrency(product.salePrice)}</p>
+                      <p className="text-[10px] text-gray-400 font-bold">Costo: {formatCurrency(product.purchasePrice)}</p>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className={cn("inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black", product.stock <= product.minStock ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600")}>{product.stock}</div>
+                    </td>
+                    <td className="px-6 py-4"><span className="text-xs font-mono text-gray-500">{product.location || 'N/A'}</span></td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => { setSelectedProductForQR(product); setIsQRModalOpen(true); }} className="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Etiqueta QR"><QrCode size={18} /></button>
+                        <button onClick={() => openEdit(product)} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Editar"><Edit2 size={18} /></button>
+                        <button onClick={() => setDeleteConfirm(product.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Eliminar"><Trash2 size={18} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+          {filteredProducts.map(product => (
+            <div key={product.id} className="bg-white rounded-2xl p-3 sm:p-4 border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative group" onClick={() => openEdit(product)}>
+              <div>
+                <div className="aspect-square bg-gray-50 rounded-xl mb-3 flex items-center justify-center overflow-hidden border border-gray-100">
+                  {product.imageUrl ? <img src={product.imageUrl} alt={product.pieceNumber} className="w-full h-full object-cover" /> : <Package size={32} className="text-gray-300" />}
+                </div>
+                <div className="flex items-start justify-between gap-1 mb-1">
+                  <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate">{product.brand}</span>
+                  {product.stock <= product.minStock && <AlertTriangle size={14} className="text-red-500 shrink-0" />}
+                </div>
+                <h3 className="font-bold text-gray-900 text-xs sm:text-sm truncate">{product.pieceNumber}</h3>
+                <p className="text-[11px] text-gray-500 line-clamp-2 mt-0.5 leading-tight">{product.description}</p>
+              </div>
+              <div className="mt-3 pt-2 border-t border-gray-50 flex items-end justify-between">
+                <div>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase">Precio</p>
+                  <p className="font-black text-primary text-sm sm:text-base">{formatCurrency(product.salePrice)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase">Stock</p>
+                  <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", product.stock <= product.minStock ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600")}>{product.stock}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+{isBarcodeScannerOpen && (
         <BarcodeScanner onScan={(code) => setFormData(prev => ({ ...prev, barcode: code }))} onClose={() => setIsBarcodeScannerOpen(false)} />
       )}
 
