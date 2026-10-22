@@ -248,35 +248,32 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
+
     const errors: string[] = [];
-    if (!String(formData.pieceNumber || '').trim()) errors.push("• El Número de Pieza es obligatorio.");
-    if (!String(formData.description || '').trim()) errors.push("• La Descripción es obligatoria.");
-    if (!String(formData.brand || '').trim()) errors.push("• Debes seleccionar una Marca.");
-    if (!String(formData.category || '').trim()) errors.push("• Debes seleccionar una Categoría.");
-    if (!String(formData.location || '').trim()) errors.push("• La Ubicación es obligatoria.");
-    if (formData.purchasePrice === undefined || formData.purchasePrice < 0) errors.push("• El Precio de Compra debe ser 0 o mayor.");
-    if (formData.salePrice === undefined || formData.salePrice <= 0) errors.push("• El Precio de Venta debe ser mayor a 0.");
-    if (formData.stock === undefined || formData.stock < 0) errors.push("• El Stock Inicial no puede ser negativo.");
+    const pieceNumberStr = String(formData.pieceNumber || '').trim();
+    const descriptionStr = String(formData.description || '').trim();
+    
+    if (!pieceNumberStr) errors.push("• El Número de Pieza es obligatorio.");
+    if (!descriptionStr) errors.push("• La Descripción es obligatoria.");
+    if (formData.salePrice === undefined || Number(formData.salePrice) <= 0) errors.push("• El Precio de Venta debe ser mayor a 0.");
 
     if (errors.length > 0) {
-      toast.error("Faltan datos o hay errores en el formulario", {
-        description: (
-          <div className="mt-2 space-y-1 text-sm font-medium">
-            {errors.map((err, i) => <div key={i}>{err}</div>)}
-          </div>
-        ),
-        duration: 6000,
-      });
+      toast.error("Faltan datos", { description: <div className="space-y-1">{errors.map((err, i) => <div key={i}>{err}</div>)}</div> });
+      setIsSaving(false);
       return;
     }
 
     try {
-      const sanitizedInvoiceRef = String(formData.invoiceReference || '').trim() || '';
-      const payload = {
-        ...formData,
-        invoiceReference: sanitizedInvoiceRef,
-        references: JSON.stringify(references),
-        images: JSON.stringify(additionalImages)
+      const sanitizedInvoiceRef = String(formData.invoiceReference || '').trim();
+      const payload = { 
+        ...formData, 
+        pieceNumber: pieceNumberStr,
+        description: descriptionStr,
+        barcode: String(formData.barcode || '').trim(),
+        invoiceReference: sanitizedInvoiceRef, 
+        references: JSON.stringify(references) 
       };
 
       if (editingProduct) {
@@ -324,6 +321,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
       setIsModalOpen(false);
       setEditingProduct(null);
       setReferences([]);
+      setAdditionalImages([]);
       setFormData({
         pieceNumber: '', description: '', brand: 'MF', model: '', category: 'Motor',
         purchasePrice: 0, salePrice: 0, stock: 0, minStock: 2, maxStock: 50,
@@ -331,7 +329,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
       });
     } catch (error) {
       console.error('Error saving product:', error);
-      setNotification({ message: 'Error al guardar el producto. Por favor, intenta de nuevo.', type: 'error' });
+      setNotification({ message: 'Error al guardar el producto.', type: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -467,7 +465,7 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
         </div>
       </div>
 
-      <AnimatePresence>
+            <AnimatePresence>
         {showAdvancedFilters && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -486,168 +484,32 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
                 </select>
               </div>
               <div className="flex items-end">
-                <button onClick={() => { setFilterBrand('All'); setFilterCategory('All'); setFilterLowStock(false); setSearchQuery(''); }} className="w-full px-4 py-2 text-primary font-bold hover:bg-primary/5 rounded-xl transition-all">
-                  Limpiar Filtros
-                </button>
+                <button onClick={() => { setFilterBrand('All'); setFilterCategory('All'); setFilterLowStock(false); setSearchQuery(''); }} className="w-full px-4 py-2 text-primary font-bold hover:bg-primary/5 rounded-xl transition-all">Limpiar Filtros</button>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {showHistory && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-6xl h-full flex flex-col">
-              <InventoryHistory onClose={() => setShowHistory(false)} />
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Product List */}
-      {viewMode === 'table' ? (
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50/50 border-b border-gray-50">
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Producto</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Marca/Modelo</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Categoría</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Precio Venta</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Stock</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Ubicación</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filteredProducts.map(product => (
-                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4 cursor-pointer hover:bg-gray-50/80 transition-colors" onClick={() => setSelectedProductDetail(product)}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 group-hover:ring-2 group-hover:ring-primary/40 transition-all">
-                          {product.imageUrl ? (<img src={product.imageUrl} alt={product.pieceNumber} className="w-full h-full object-cover" />) : (<Package size={20} className="text-gray-400" />)}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-gray-900">{product.pieceNumber}</p>
-                            {product.stock <= product.minStock && (
-                              <span className="px-1.5 py-0.5 bg-red-100 text-red-600 text-[9px] font-black rounded uppercase flex items-center gap-1 shrink-0"><AlertTriangle size={10} />Bajo</span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500 truncate max-w-[200px]">{product.description}</p>
-                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                            {product.barcode && (<div className="flex items-center gap-1 text-[10px] font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded w-fit"><Barcode size={10} />{product.barcode}</div>)}
-                            {product.invoiceReference && (
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setSearchQuery(product.invoiceReference || ''); }} className="flex items-center gap-1 text-[10px] font-mono text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 px-1.5 py-0.5 rounded w-fit transition-colors cursor-pointer" title={`Filtrar por factura: ${product.invoiceReference}`}>
-                                <FileText size={10} className="text-emerald-600 shrink-0" /><span className="font-semibold">Factura:</span><span className="truncate max-w-[130px]">{product.invoiceReference}</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded-md mr-2">{product.brand}</span>
-                      <span className="text-xs text-gray-500">{product.model}</span>
-                    </td>
-                    <td className="px-6 py-4"><span className="text-xs font-medium text-gray-600">{product.category}</span></td>
-                    <td className="px-6 py-4 text-right">
-                      <p className="font-bold text-gray-900">{formatCurrency(product.salePrice)}</p>
-                      <p className="text-[10px] text-gray-400 font-bold">Costo: {formatCurrency(product.purchasePrice)}</p>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className={cn("inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black", product.stock <= product.minStock ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600")}>{product.stock}</div>
-                    </td>
-                    <td className="px-6 py-4"><span className="text-xs font-mono text-gray-500">{product.location || 'N/A'}</span></td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setSelectedProductForQR(product); setIsQRModalOpen(true); }} className="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Etiqueta QR"><QrCode size={18} /></button>
-                        <button onClick={() => openEdit(product)} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Editar"><Edit2 size={18} /></button>
-                        <button onClick={() => setDeleteConfirm(product.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Eliminar"><Trash2 size={18} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-          {filteredProducts.map(product => (
-            <div key={product.id} className="bg-white rounded-2xl p-3 sm:p-4 border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative group" onClick={() => openEdit(product)}>
-              <div>
-                <div className="aspect-square bg-gray-50 rounded-xl mb-3 flex items-center justify-center overflow-hidden border border-gray-100">
-                  {product.imageUrl ? (<img src={product.imageUrl} alt={product.pieceNumber} className="w-full h-full object-cover" />) : (<Package size={32} className="text-gray-300" />)}
-                </div>
-                <div className="flex items-start justify-between gap-1 mb-1">
-                  <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate">{product.brand}</span>
-                  {product.stock <= product.minStock && <AlertTriangle size={14} className="text-red-500 shrink-0" />}
-                </div>
-                <h3 className="font-bold text-gray-900 text-xs sm:text-sm truncate">{product.pieceNumber}</h3>
-                <p className="text-[11px] text-gray-500 line-clamp-2 mt-0.5 leading-tight">{product.description}</p>
-              </div>
-              <div className="mt-3 pt-2 border-t border-gray-50 flex items-end justify-between">
-                <div>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Precio</p>
-                  <p className="font-black text-primary text-sm sm:text-base">{formatCurrency(product.salePrice)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Stock</p>
-                  <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", product.stock <= product.minStock ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600")}>{product.stock}</span>
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-2xl flex items-center justify-center gap-2 transition-opacity pointer-events-none sm:pointer-events-auto">
-                <button onClick={(e) => { e.stopPropagation(); openEdit(product); }} className="p-2 bg-white text-gray-900 rounded-full shadow-lg hover:scale-110 transition-transform"><Edit2 size={16} /></button>
-                <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(product.id); }} className="p-2 bg-white text-red-600 rounded-full shadow-lg hover:scale-110 transition-transform"><Trash2 size={16} /></button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Notifications */}
-      <AnimatePresence>
-        {notification && (
-          <motion.div
-            initial={{ opacity: 0, y: 50, x: '-50%' }} animate={{ opacity: 1, y: 0, x: '-50%' }} exit={{ opacity: 0, y: 50, x: '-50%' }}
-            className={cn("fixed bottom-8 left-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 min-w-[300px]", notification.type === 'success' ? "bg-green-600 text-white" : "bg-red-600 text-white")}
-          >
-            {notification.type === 'success' ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
-            <p className="font-bold text-sm">{notification.message}</p>
-            <button onClick={() => setNotification(null)} className="ml-auto p-1 hover:bg-white/20 rounded-lg transition-all"><X size={16} /></button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Delete Confirmation */}
-      <AnimatePresence>
-        {deleteConfirm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-6"><Trash2 size={32} /></div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">¿Eliminar producto?</h3>
-              <p className="text-gray-500 mb-8">Esta acción no se puede deshacer. El producto será eliminado permanentemente del inventario.</p>
-              <div className="flex gap-3">
-                <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-all">Cancelar</button>
-                <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-600/20 hover:opacity-90 transition-all">Eliminar</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Add/Edit Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh]"
+            >
               <div className="p-4 sm:p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50 shrink-0">
                 <h3 className="text-xl font-bold text-gray-900">{editingProduct ? 'Editar Producto' : 'Nuevo Producto'}</h3>
                 <button onClick={() => setIsModalOpen(false)} className="p-2 text-gray-400 hover:bg-white rounded-xl transition-all"><X size={24} /></button>
               </div>
+
               <form onSubmit={handleSave} className="p-4 sm:p-8 space-y-6 flex-1 overflow-y-auto overscroll-contain">
                 <div
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -690,7 +552,6 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
                   {isScanning && (<div className="absolute bottom-0 left-0 h-1 bg-primary transition-all duration-300" style={{ width: `${scanProgress}%` }} />)}
                 </div>
 
-                {/* GALERÍA DE IMÁGENES ADICIONALES */}
                 <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
@@ -796,29 +657,11 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
                     <input required type="number" className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium" value={formData.stock} onChange={e => setFormData({...formData, stock: Number(e.target.value)})} />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Stock Inicial</label>
-                    <input 
-                      required
-                      type="number" 
-                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium"
-                      value={formData.stock}
-                      onChange={e => setFormData({...formData, stock: Number(e.target.value)})}
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                       Stock Mínimo (Alerta)
                       <span className="text-[10px] text-primary font-bold bg-primary/10 px-1.5 py-0.5 rounded normal-case">Manual</span>
                     </label>
-                    <input 
-                      required
-                      type="number" 
-                      min="0"
-                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium"
-                      value={formData.minStock}
-                      onChange={e => setFormData({...formData, minStock: Number(e.target.value)})}
-                      placeholder="Ej. 2"
-                    />
+                    <input required type="number" min="0" className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none outline-none focus:ring-2 ring-primary/20 transition-all font-medium" value={formData.minStock} onChange={e => setFormData({...formData, minStock: Number(e.target.value)})} placeholder="Ej. 2" />
                     <p className="text-[10px] text-gray-400">Cantidad mínima antes de mostrar la alerta de "Stock Bajo".</p>
                   </div>
                   <LocationPicker value={formData.location || 'PB-01-A'} onChange={(val) => setFormData({...formData, location: val})} />
@@ -859,7 +702,9 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
 
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all">Cancelar</button>
-                  <button type="submit" className="flex-1 py-4 bg-primary text-white rounded-2xl font-bold shadow-xl shadow-primary/20 hover:opacity-90 transition-all flex items-center justify-center gap-2"><Save size={20} />{editingProduct ? 'Guardar Cambios' : 'Crear Producto'}</button>
+                  <button type="submit" disabled={isSaving} className="flex-1 py-4 bg-primary text-white rounded-2xl font-bold shadow-xl shadow-primary/20 hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                    {isSaving ? (<><Loader2 size={20} className="animate-spin" />Guardando...</>) : (<><Save size={20} />{editingProduct ? 'Guardar Cambios' : 'Crear Producto'}</>)}
+                  </button>
                 </div>
               </form>
             </motion.div>
