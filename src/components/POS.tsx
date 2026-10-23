@@ -23,9 +23,9 @@ import {
   Receipt
 } from 'lucide-react';
 
-
 import { Product, Sale, SaleItem, Customer } from '../types';
 import { cn, formatCurrency } from '../lib/utils';
+import { printTicket } from '../lib/printTicket';
 import { motion, AnimatePresence } from 'motion/react';
 import { Html5Qrcode } from "html5-qrcode";
 import { InvoiceGenerator } from './Invoicing/InvoiceGenerator';
@@ -44,6 +44,8 @@ export const POS: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<Sale['paymentMethod']>('EFECTIVO');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -52,17 +54,28 @@ export const POS: React.FC = () => {
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
+  const [lastSaleData, setLastSaleData] = useState<any>(null); // Datos para reimprimir
   const [selectedProductDetail, setSelectedProductDetail] = useState<Product | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
+  const customerDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleCustomerClickOutside = (event: MouseEvent) => {
+      if (customerDropdownRef.current && !customerDropdownRef.current.contains(event.target as Node)) {
+        setIsCustomerDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleCustomerClickOutside);
+    return () => document.removeEventListener('mousedown', handleCustomerClickOutside);
+  }, []);
 
   const loadPosData = async () => {
     try {
       const url = import.meta.env.VITE_APPS_SCRIPT_URL;
       if (!url) return;
 
-      // Cargar productos reales desde Google Sheets
       const prodRes = await fetch(url, {
         method: 'POST',
         body: JSON.stringify({ action: 'getProducts', data: {} })
@@ -70,18 +83,19 @@ export const POS: React.FC = () => {
       const prodData = await prodRes.json();
       if (prodData.success) setProducts(prodData.data || []);
 
-      // Clientes (Temporalmente vacío hasta migrar a Sheets)
-      setCustomers([]);
+      const custRes = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'getCustomers', data: {} })
+      });
+      const custData = await custRes.json();
+      if (custData.success) setCustomers(custData.data || []);
     } catch (err) {
       console.error("Error cargando POS desde Sheets:", err);
     }
   };
 
   useEffect(() => {
-    const cleanup = loadPosData();
-    return () => {
-      cleanup.then(fn => fn && fn());
-    };
+    loadPosData();
   }, []);
 
   useEffect(() => {
@@ -95,10 +109,8 @@ export const POS: React.FC = () => {
   }, []);
 
   const filteredProducts = useMemo(() => {
-    // 1. Filtrar por búsqueda, categoría y marca
     const filtered = products.filter(p => {
       const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 0);
-      // IMPORTANTE: Convertir a String() por si Sheets devuelve números
       const pieceNumber = String(p.pieceNumber || '').toLowerCase();
       const description = String(p.description || '').toLowerCase();
       const brand = String(p.brand || '').toLowerCase();
@@ -117,7 +129,6 @@ export const POS: React.FC = () => {
       return matchesSearch && matchesCategory && matchesBrand;
     });
 
-    // 2. Eliminar duplicados por número de pieza (por si en Sheets hay filas repetidas)
     const uniqueMap = new Map();
     filtered.forEach(p => {
       if (!uniqueMap.has(p.pieceNumber)) {
@@ -129,9 +140,18 @@ export const POS: React.FC = () => {
   }, [products, searchQuery, selectedCategory, selectedBrand]);
 
   const addToCart = (product: Product) => {
+    if (Number(product.stock) <= 0) {
+      toast.error('No hay stock disponible de este producto.');
+      return;
+    }
+
     setCart(prev => {
       const existing = prev.find(item => item.productId === product.id);
       if (existing) {
+        if (existing.quantity + 1 > Number(product.stock)) {
+          toast.error(`Solo hay ${product.stock} piezas disponibles.`);
+          return prev;
+        }
         return prev.map(item => 
           item.productId === product.id 
             ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price }
@@ -155,7 +175,15 @@ export const POS: React.FC = () => {
   const updateQuantity = (productId: string, delta: number) => {
     setCart(prev => prev.map(item => {
       if (item.productId === productId) {
+        const prod = products.find(p => p.id === productId);
+        const maxStock = prod ? Number(prod.stock) : 0;
         const newQty = Math.max(0, item.quantity + delta);
+        
+        if (delta > 0 && newQty > maxStock) {
+          toast.error(`Solo hay ${maxStock} piezas disponibles de este producto.`);
+          return item; // Rechaza el aumento si excede el stock
+        }
+
         return { ...item, quantity: newQty, subtotal: newQty * item.price };
       }
       return item;
@@ -174,67 +202,71 @@ export const POS: React.FC = () => {
     if (cart.length === 0) return;
     setIsProcessing(true);
     try {
-      const saleData: Omit<Sale, 'id'> = {
-        customerId: selectedCustomer?.id,
+      const ticketId = 'TICKET-' + Date.now();
+      
+      const saleData = {
+        customerId: selectedCustomer?.id || '',
         items: cart,
+        subtotal: subtotal,
+        discount: discount,
+        tax: tax,
+        total: total,
+        paymentMethod: paymentMethod,
+        status: 'COMPLETED',
+        timestamp: new Date().toISOString(),
+        sellerId: 'vendedor_pos',
+        ticketId: ticketId
+      };
+
+      const url = import.meta.env.VITE_APPS_SCRIPT_URL;
+      if (!url) throw new Error('Falta configurar el backend');
+
+      const res = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({ 
+          action: 'createSale', 
+          data: saleData 
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Error al procesar la venta');
+      }
+
+      // Guardamos los datos para el ticket
+      const ticketData = {
+        ticketId,
+        items: [...cart],
         subtotal,
         discount,
         tax,
         total,
         paymentMethod,
-        status: 'COMPLETED',
-        timestamp: new Date().toISOString(),
-        sellerId: 'vendedor_pos'
+        customer: selectedCustomer || null, // <-- Enviamos el cliente completo
+        customerName: selectedCustomer?.name || 'Venta al Público',
+        date: new Date().toISOString()
       };
-
-      const url = import.meta.env.VITE_APPS_SCRIPT_URL;
-      if (!url) throw new Error("Falta configurar el backend");
-
-      const ticketId = `TICKET-${Date.now()}`;
-
-      // Iterar sobre los productos vendidos y actualizar el Sheet
-      for (const item of cart) {
-        const prod = products.find(p => p.id === item.productId);
-        const currentStock = prod ? Number(prod.stock) : 0;
-        const newStock = currentStock - item.quantity;
-
-        // 1. Actualizar el Stock en Google Sheets
-        await fetch(url, {
-          method: 'POST',
-          body: JSON.stringify({ 
-            action: 'updateProduct', 
-            data: { id: item.productId, stock: newStock } 
-          })
-        });
-
-        // 2. Registrar el Movimiento de Salida en Google Sheets
-        await fetch(url, {
-          method: 'POST',
-          body: JSON.stringify({ 
-            action: 'createMovement', 
-            data: {
-              productId: item.productId,
-              type: 'OUT',
-              quantity: item.quantity,
-              reason: `Venta en POS #${ticketId}`,
-              timestamp: new Date().toISOString(),
-              userId: 'vendedor_pos'
-            } 
-          })
-        });
-      }
-
+      
+      setLastSaleData(ticketData);
       setLastSaleId(ticketId);
-      // Recargamos los productos para reflejar el stock actualizado
-      loadPosData();
+      
+      await loadPosData();
 
       setCart([]);
       setSelectedCustomer(null);
       setDiscount(0);
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+
+      // Impresión automática (pequeño delay para que el navegador no la bloquee)
+      setTimeout(() => {
+        printTicket(ticketData);
+      }, 500);
+
     } catch (error) {
       console.error('Error during checkout:', error);
+      toast.error(error instanceof Error ? error.message : 'Hubo un error al guardar la venta.');
     } finally {
       setIsProcessing(false);
     }
@@ -295,7 +327,10 @@ export const POS: React.FC = () => {
                     <button
                       key={product.id}
                       onClick={() => setSelectedProductDetail(product)}
-                      className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left group"
+                      className={cn(
+                        "w-full flex items-center gap-4 p-4 transition-colors text-left group",
+                        product.stock > 0 ? "hover:bg-gray-50" : "opacity-50 grayscale cursor-not-allowed"
+                      )}
                     >
                       <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 border border-gray-100">
                         {product.imageUrl ? (
@@ -404,8 +439,18 @@ export const POS: React.FC = () => {
                   layout
                   key={product.id}
                   onClick={() => setSelectedProductDetail(product)}
-                  className="bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-4 text-left border border-gray-100 hover:border-primary hover:shadow-xl transition-all group relative overflow-hidden active:scale-98"
+                  className={cn(
+                    "bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-4 text-left border border-gray-100 transition-all group relative overflow-hidden active:scale-98",
+                    product.stock > 0 ? "hover:border-primary hover:shadow-xl" : "opacity-60 grayscale cursor-not-allowed border-gray-200"
+                  )}
                 >
+                  {product.stock <= 0 && (
+                    <div className="absolute inset-0 bg-white/40 z-10 flex items-center justify-center pointer-events-none rounded-xl">
+                      <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-md">
+                        Sin Stock
+                      </span>
+                    </div>
+                  )}
                   <div className="aspect-square rounded-lg sm:rounded-xl bg-gray-50 mb-2 sm:mb-3 flex items-center justify-center overflow-hidden border border-gray-50">
                     {product.imageUrl ? (
                       <img src={product.imageUrl} alt={product.pieceNumber} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
@@ -454,23 +499,58 @@ export const POS: React.FC = () => {
           {/* Customer Selection */}
           <div className="p-3 sm:p-4 border-b border-gray-50">
             <div className="flex items-center gap-2">
-              <div className="flex-1 relative min-w-0">
-                <select 
-                  className="w-full pl-9 pr-7 py-2 bg-gray-100 rounded-xl text-xs sm:text-sm font-medium border-none outline-none appearance-none truncate"
-                  value={selectedCustomer?.id || ''}
-                  onChange={(e) => {
-                    const customer = customers.find(c => c.id === e.target.value);
-                    setSelectedCustomer(customer || null);
-                  }}
-                >
-                  <option value="">Cliente Mostrador</option>
-                  {customers.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-                <UserPlus size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              </div>
+                              <div className="flex-1 relative min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
+                    className="w-full pl-9 pr-7 py-2 bg-gray-100 rounded-xl text-xs sm:text-sm font-medium border-none outline-none appearance-none truncate text-left flex items-center justify-between"
+                  >
+                    <span className="truncate">{selectedCustomer ? selectedCustomer.name : 'Cliente Mostrador'}</span>
+                    <ChevronDown size={14} className={cn("text-gray-400 shrink-0 ml-1 transition-transform", isCustomerDropdownOpen && "rotate-180")} />
+                  </button>
+                  <UserPlus size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  {isCustomerDropdownOpen && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden flex flex-col" ref={customerDropdownRef}>
+                      <div className="p-2 border-b border-gray-50 bg-gray-50/50">
+                        <input
+                          type="text"
+                          placeholder="Buscar por nombre o RFC..."
+                          className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs outline-none focus:ring-1 ring-primary/20"
+                          value={customerSearch}
+                          onChange={(e) => setCustomerSearch(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                      <div className="max-h-48 overflow-y-auto">
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedCustomer(null); setIsCustomerDropdownOpen(false); }}
+                          className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 transition-colors font-bold text-gray-700 border-b border-gray-50"
+                        >
+                          Cliente Mostrador
+                        </button>
+                        {customers
+                          .filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()) || (c.rfc && c.rfc.toLowerCase().includes(customerSearch.toLowerCase())))
+                          .map(c => (
+                            <button
+                              type="button"
+                              key={c.id}
+                              onClick={() => { setSelectedCustomer(c); setIsCustomerDropdownOpen(false); }}
+                              className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                            >
+                              <p className="font-bold text-gray-900">{c.name}</p>
+                              <p className="text-[10px] text-gray-500">{c.rfc || 'Sin RFC'}</p>
+                            </button>
+                          ))}
+                        {customers.filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()) || (c.rfc && c.rfc.toLowerCase().includes(customerSearch.toLowerCase()))).length === 0 && (
+                          <div className="p-4 text-center text-xs text-gray-400">
+                            No se encontraron clientes
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               <button 
                 id="pos-open-new-customer-modal-btn"
                 type="button"
@@ -582,7 +662,7 @@ export const POS: React.FC = () => {
               <button 
                 onClick={() => window.print()}
                 className="p-3 sm:p-4 bg-white border border-gray-200 text-gray-600 rounded-xl sm:rounded-2xl hover:bg-gray-50 transition-all shrink-0"
-                title="Imprimir"
+                title="Imprimir Pre-Ticket"
               >
                 <Printer size={20} />
               </button>
@@ -759,6 +839,15 @@ export const POS: React.FC = () => {
               <div className="space-y-3">
                 <button 
                   onClick={() => {
+                    if (lastSaleData) printTicket(lastSaleData);
+                  }}
+                  className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg hover:bg-black transition-colors"
+                >
+                  <Printer size={20} />
+                  Reimprimir Ticket
+                </button>
+                <button 
+                  onClick={() => {
                     setShowSuccess(false);
                     setShowInvoiceModal(true);
                   }}
@@ -877,13 +966,23 @@ export const POS: React.FC = () => {
 
                 <button
                   onClick={() => {
+                    if (selectedProductDetail.stock <= 0) {
+                      toast.error('Este producto no tiene stock disponible.');
+                      return;
+                    }
                     addToCart(selectedProductDetail);
                     setSelectedProductDetail(null);
                   }}
-                  className="w-full mt-6 py-4 bg-primary text-white rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
+                  disabled={selectedProductDetail.stock <= 0}
+                  className={cn(
+                    "w-full mt-6 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2",
+                    selectedProductDetail.stock > 0 
+                      ? "bg-primary text-white shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95" 
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+                  )}
                 >
                   <Plus size={20} />
-                  Agregar al Ticket
+                  {selectedProductDetail.stock > 0 ? 'Agregar al Ticket' : 'Sin Stock Disponible'}
                 </button>
               </div>
             </motion.div>

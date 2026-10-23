@@ -4,7 +4,7 @@ import {
   ArrowUpRight, ArrowDownLeft, History, Edit2, Trash2,
   ChevronRight, ChevronLeft, ChevronDown, X, Save, Image as ImageIcon,
   Camera, Loader2, CheckCircle2, Barcode, QrCode, FileText,
-  LayoutGrid, List
+  LayoutGrid, List, TrendingUp
 } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { generateContentWithFallback, parseJsonFromMarkdown } from '../lib/gemini';
@@ -28,7 +28,7 @@ import { PartQRLabelModal } from './PartQRLabelModal';
 const BRANDS = ["MF", "JD", "NH", "Ford", "Case", "Perkins"];
 const CATEGORIES = ["Motor", "Transmisión", "Hidráulica", "Eléctrico", "Filtros", "Rodamientos", "Otros"];
 
-export const Inventory: React.FC = () => {
+export const Inventory: React.FC<{ prefilledProduct?: any; onClearPrefilled?: () => void }> = ({ prefilledProduct, onClearPrefilled }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,6 +51,7 @@ export const Inventory: React.FC = () => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [showStats, setShowStats] = useState(false);
+  const [statDetail, setStatDetail] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [references, setReferences] = useState<any[]>([]);
   const [additionalImages, setAdditionalImages] = useState<string[]>([]);
@@ -129,6 +130,39 @@ export const Inventory: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+  // Prellenar formulario si viene desde el Catálogo de Partes
+  useEffect(() => {
+    if (prefilledProduct) {
+      setFormData(prev => ({
+        ...prev,
+        pieceNumber: prefilledProduct.partNumber || '',
+        description: prefilledProduct.description || '',
+        salePrice: prefilledProduct.price || 0,
+        purchasePrice: 0, // Se deja en 0 para que el usuario lo ingrese
+        model: String(prefilledProduct.references || ''),
+      }));
+      
+      // Mapear las referencias cruzadas al formato que usa el Inventario
+      if (prefilledProduct.references) {
+        const parsedRefs = String(prefilledProduct.references).split(',').filter(Boolean).map((r: string) => ({
+          fabricante: 'Cruzada',
+          numero_parte: r.trim(),
+          tipo_maquina: '',
+          medidas: '',
+          descripcion: ''
+        }));
+        setReferences(parsedRefs);
+      } else {
+        setReferences([]);
+      }
+
+      setEditingProduct(null); // Asegurar que es un producto NUEVO
+      setIsModalOpen(true);    // Abrir el modal automáticamente
+      
+      // Limpiar el estado en App.tsx para que no se vuelva a abrir
+      if (onClearPrefilled) onClearPrefilled();
+    }
+  }, [prefilledProduct, onClearPrefilled]);
 
   const filteredProducts = products.filter(p => {
     if (!p) return false;
@@ -383,11 +417,12 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4">
         {(() => {
           const validProducts = products.filter(p => p && (p.pieceNumber || p.description));
           const lowStockCount = validProducts.filter(p => Number(p.stock) <= Number(p.minStock)).length;
           const totalValue = validProducts.reduce((sum, p) => sum + (Number(p.purchasePrice) * Number(p.stock)), 0);
+          const projectedValue = validProducts.reduce((sum, p) => sum + (Number(p.salePrice) * Number(p.stock)), 0);
           const today = new Date().toLocaleDateString('es-MX');
           const movementsToday = movements.filter(m => {
             if (!m.timestamp) return false;
@@ -395,13 +430,14 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
             return !isNaN(d.getTime()) && d.toLocaleDateString('es-MX') === today;
           }).length;
           return [
-            { label: 'Total Productos', value: validProducts.length, icon: Package, color: 'bg-blue-500' },
-            { label: 'Stock Bajo', value: lowStockCount, icon: AlertTriangle, color: 'bg-amber-500' },
-            { label: 'Valor Inventario', value: formatCurrency(totalValue), icon: ArrowUpRight, color: 'bg-green-500' },
-            { label: 'Movimientos Hoy', value: movementsToday, icon: History, color: 'bg-purple-500' },
+            { id: 'total', label: 'Total Productos', value: validProducts.length, icon: Package, color: 'bg-blue-500' },
+            { id: 'lowStock', label: 'Stock Bajo', value: lowStockCount, icon: AlertTriangle, color: 'bg-amber-500' },
+            { id: 'cost', label: 'Costo Inventario', value: formatCurrency(totalValue), icon: ArrowUpRight, color: 'bg-green-500' },
+            { id: 'projected', label: 'Venta Proyectada', value: formatCurrency(projectedValue), icon: TrendingUp, color: 'bg-indigo-500' },
+            { id: 'movements', label: 'Movimientos Hoy', value: movementsToday, icon: History, color: 'bg-purple-500' },
           ];
         })().map((stat, i) => (
-          <div key={i} className="bg-white p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+          <div key={i} onClick={() => setStatDetail(stat.id)} className="bg-white p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group">
             <div className={cn("w-8 h-8 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-lg shrink-0", stat.color)}>
               <stat.icon size={16} className="sm:w-6 sm:h-6" />
             </div>
@@ -858,6 +894,80 @@ Devuelve OBLIGATORIAMENTE un JSON con este formato exacto:
                   <button onClick={() => setSelectedProductDetail(null)} className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all">Cerrar</button>
                   <button onClick={() => { openEdit(selectedProductDetail); setSelectedProductDetail(null); }} className="flex-[2] py-3 bg-primary text-white rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"><Edit2 size={20} />Editar Producto</button>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* MODAL DE DETALLES DE ESTADÍSTICAS */}
+      <AnimatePresence>
+        {statDetail && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setStatDetail(null)}>
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  {statDetail === 'total' && <><Package className="text-blue-500" /> Desglose de Total de Productos</>}
+                  {statDetail === 'lowStock' && <><AlertTriangle className="text-amber-500" /> Desglose de Productos con Stock Bajo</>}
+                  {statDetail === 'cost' && <><ArrowUpRight className="text-green-500" /> Desglose de Costo de Inventario</>}
+                  {statDetail === 'projected' && <><TrendingUp className="text-indigo-500" /> Desglose de Venta Proyectada</>}
+                  {statDetail === 'movements' && <><History className="text-purple-500" /> Desglose de Movimientos de Hoy</>}
+                </h3>
+                <button onClick={() => setStatDetail(null)} className="p-2 text-gray-400 hover:bg-white rounded-xl transition-all"><X size={24} /></button>
+              </div>
+              <div className="p-0 overflow-y-auto flex-1">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-bold sticky top-0 shadow-sm z-10">
+                    <tr>
+                      <th className="px-6 py-4">Artículo / Concepto</th>
+                      {statDetail === 'movements' ? (
+                        <><th className="px-6 py-4">Tipo</th><th className="px-6 py-4">Motivo</th></>
+                      ) : (
+                        <><th className="px-6 py-4 text-right">Stock</th><th className="px-6 py-4 text-right">Precio Unit.</th><th className="px-6 py-4 text-right">Total</th></>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {statDetail !== 'movements' && products.filter(p => p && (statDetail === 'lowStock' ? Number(p.stock) <= Number(p.minStock) : true)).map(p => {
+                      const unitPrice = statDetail === 'cost' ? p.purchasePrice : p.salePrice;
+                      const rowTotal = Number(unitPrice) * Number(p.stock);
+                      return (
+                        <tr key={p.id} className="hover:bg-gray-50/50">
+                          <td className="px-6 py-4">
+                            <p className="font-bold text-gray-900">{p.pieceNumber}</p>
+                            <p className="text-xs text-gray-500 truncate max-w-[300px]">{p.description}</p>
+                          </td>
+                          <td className="px-6 py-4 text-right font-medium">{p.stock} pzas</td>
+                          <td className="px-6 py-4 text-right font-mono text-gray-500">{formatCurrency(unitPrice)}</td>
+                          <td className="px-6 py-4 text-right font-bold text-primary">{formatCurrency(rowTotal)}</td>
+                        </tr>
+                      );
+                    })}
+                    {statDetail === 'movements' && movements.filter(m => {
+                      if (!m.timestamp) return false;
+                      const d = new Date(m.timestamp);
+                      return !isNaN(d.getTime()) && d.toLocaleDateString('es-MX') === new Date().toLocaleDateString('es-MX');
+                    }).map(m => {
+                      const product = products.find(p => p.id === m.productId);
+                      return (
+                        <tr key={m.id} className="hover:bg-gray-50/50">
+                          <td className="px-6 py-4">
+                            <p className="font-bold text-gray-900">{product?.pieceNumber || 'Desconocido'}</p>
+                            <p className="text-xs text-gray-500">{product?.description || m.productId}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={cn("px-2 py-1 rounded text-xs font-bold", m.type === 'IN' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700')}>
+                              {m.type === 'IN' ? 'Entrada' : 'Salida'} ({m.quantity})
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-xs text-gray-600">{m.reason}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+                <button onClick={() => setStatDetail(null)} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-colors">Cerrar Detalle</button>
               </div>
             </motion.div>
           </motion.div>

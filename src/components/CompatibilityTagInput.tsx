@@ -10,7 +10,7 @@ export const CompatibilityTagInput: React.FC<CompatibilityTagInputProps> = ({ va
   const [inputValue, setInputValue] = useState('');
 
   // Convertimos el string de la BD (separado por comas) en un array limpio
-  const tags = value ? value.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const tags = value ? (typeof value === 'string' ? value : '').split(',').map(t => t.trim()).filter(Boolean) : [];
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {

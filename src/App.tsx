@@ -33,6 +33,9 @@ function AppContent() {
   const { user, loading } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('pos');
   const [viewMode, setViewMode] = useState<'store' | 'erp'>('erp');
+  
+  // ESTADO PARA RECIBIR EL PRODUCTO DEL CATÁLOGO
+  const [prefilledProduct, setPrefilledProduct] = useState<any>(null);
 
   useEffect(() => {
     try {
@@ -41,19 +44,6 @@ function AppContent() {
       console.warn('Could not save view mode:', e);
     }
   }, [viewMode]);
-
-  useEffect(() => {
-    // Desactivado para evitar inyectar productos falsos.
-    // Ahora usamos Google Sheets como base de datos real.
-    /*
-    if (user) {
-      const timer = setTimeout(() => {
-        seedDatabase();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-    */
-  }, [user]);
 
   if (loading) {
     return (
@@ -77,7 +67,8 @@ function AppContent() {
     switch (activeTab) {
       case 'pos': return <POS />;
       case 'online-orders': return <OnlineOrdersManager />;
-      case 'inventory': return <Inventory />;
+      case 'inventory': 
+        return <Inventory prefilledProduct={prefilledProduct} onClearPrefilled={() => setPrefilledProduct(null)} />;
       case 'invoice-extractor':
       case 'ocr-reader': 
         return (
@@ -86,7 +77,15 @@ function AppContent() {
             onNavigateToInventory={() => setActiveTab('inventory')}
           />
         );
-      case 'reference-catalog': return <ReferenceCatalog />;
+      case 'reference-catalog': 
+        return (
+          <ReferenceCatalog 
+            onImportToStock={(item) => { 
+              setPrefilledProduct(item); 
+              setActiveTab('inventory'); 
+            }} 
+          />
+        );
       case 'invoice-history':
         return (
           <InvoiceHistory 
@@ -101,9 +100,8 @@ function AppContent() {
       case 'employees': return <EmployeeList />;
       case 'commissions': return <CommissionCalculator />;
       case 'attendance': return <AttendanceManager />;
-      case 'invoicing': return <TaxReports />;
+      case 'invoicing': return <ProfessionalInvoice onClose={() => setActiveTab('pos')} />;
       case 'payroll': return <Payroll />;
-      case 'professional-invoice': return <ProfessionalInvoice onClose={() => setActiveTab('invoicing')} />;
       case 'sat-config': return <SatConfigWizard />;
       case 'settings': return <Settings />;
       case 'admin-panel': return <AdminPanel />;

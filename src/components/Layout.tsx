@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from './Auth';
-import { Tractor, BarChart3, Bell, BookOpen, ChevronLeft, ChevronRight, Clock, DollarSign, FileText, History, LogOut, Menu, Package, Receipt, ScanText, Search, Settings, Shield, ShieldCheck, ShoppingBag, ShoppingCart, Truck, UserCheck, Users, X, AlertTriangle } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ChevronLeft, ChevronRight, Clock, DollarSign, FileText, History, LogOut, Menu, Package, Receipt, ScanText, Search, Settings, Shield, ShieldCheck, ShoppingBag, ShoppingCart, Truck, UserCheck, Users, X, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { MultiAssistantChat } from './Assistant/MultiAssistantChat';
@@ -115,7 +115,6 @@ export const Layout: React.FC<{
     { id: 'attendance', label: 'Asistencia', icon: Clock, roles: ['ADMIN', 'GERENTE'], perm: 'canAccessHR' },
     { id: 'payroll', label: 'Nómina', icon: DollarSign, roles: ['ADMIN', 'GERENTE'], perm: 'canAccessHR' },
     { id: 'invoicing', label: 'Facturación', icon: FileText, roles: ['ADMIN', 'GERENTE', 'CLERK', 'VENTAS', 'CAJERO', 'VENDEDOR'], perm: 'canAccessInvoicing' },
-    { id: 'professional-invoice', label: 'Facturador Pro', icon: Receipt, roles: ['ADMIN', 'GERENTE', 'CLERK', 'VENTAS', 'CAJERO', 'VENDEDOR'], perm: 'canAccessInvoicing' },
     { id: 'sat-config', label: 'Configuración SAT', icon: ShieldCheck, roles: ['ADMIN'], perm: 'canAccessSettings' },
     { id: 'admin-panel', label: 'Panel de Administración', icon: Shield, roles: ['ADMIN'], perm: 'canManagePermissions' },
     { id: 'settings', label: 'Configuración del Sistema', icon: Settings, roles: ['ADMIN'], perm: 'canAccessSettings' },
@@ -152,17 +151,15 @@ export const Layout: React.FC<{
           className="p-6 flex items-center gap-3 border-b border-gray-50 mb-6 cursor-pointer hover:bg-gray-50 transition-colors group"
           title="Ir al Punto de Venta (Home)"
         >
-          <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-lg group-hover:scale-105 transition-transform">
-            <Tractor size={24} />
-          </div>
+          <img src="/logo-agroparts.jpeg" alt="AgroParts Logo" className="w-10 h-10 rounded-xl object-cover shrink-0 shadow-lg group-hover:scale-105 transition-transform" />
           {!collapsed && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="overflow-hidden"
             >
-              <h1 className="font-bold text-xl text-gray-900 whitespace-nowrap">Farmer Parts</h1>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Spare Parts OS</p>
+              <h1 className="font-bold text-xl text-gray-900 whitespace-nowrap">AgroParts</h1>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Punto de Venta y Stock</p>
             </motion.div>
           )}
         </div>
@@ -243,10 +240,8 @@ export const Layout: React.FC<{
             className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => { setActiveTab('pos'); setMobileMenuOpen(false); }}
           >
-            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg">
-              <Tractor size={24} />
-            </div>
-            <h1 className="font-bold text-xl text-gray-900">Farmer Parts</h1>
+            <img src="/logo-agroparts.jpeg" alt="AgroParts Logo" className="w-10 h-10 rounded-xl object-cover shadow-lg" />
+            <h1 className="font-bold text-xl text-gray-900">AgroParts</h1>
           </div>
           <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-gray-500">
             <X size={24} />

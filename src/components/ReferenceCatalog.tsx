@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Package, Plus, FileText, Loader2, ArrowRight } from 'lucide-react';
+import { Search, Package, Plus, FileText, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { formatCurrency } from '../lib/utils';
@@ -17,7 +17,11 @@ interface ReferenceItem {
   price: number;
 }
 
-export const ReferenceCatalog: React.FC = () => {
+interface ReferenceCatalogProps {
+  onImportToStock?: (item: ReferenceItem) => void;
+}
+
+export const ReferenceCatalog: React.FC<ReferenceCatalogProps> = ({ onImportToStock }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ReferenceItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,17 +54,16 @@ export const ReferenceCatalog: React.FC = () => {
     }
   };
 
-  const handleImportToStock = (item: ReferenceItem) => {
-    // Aquí podrías abrir el modal de "Nuevo Producto" con estos datos precargados.
-    // Por ahora, te mostramos un mensaje indicando cómo se conectaría.
-    toast.info(`Preparando para importar: ${item.partNumber}`, {
-      description: 'Aquí se abriría el modal de Inventario con estos datos precargados.'
-    });
+  const handleImport = (item: ReferenceItem) => {
+    if (onImportToStock) {
+      onImportToStock(item);
+    } else {
+      toast.info(`Preparando para importar: ${item.partNumber}`);
+    }
   };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12">
-      {/* Header */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -72,7 +75,6 @@ export const ReferenceCatalog: React.FC = () => {
         </div>
       </div>
 
-      {/* Buscador */}
       <form onSubmit={handleSearch} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -93,7 +95,6 @@ export const ReferenceCatalog: React.FC = () => {
         </button>
       </form>
 
-      {/* Resultados */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden min-h-[300px]">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-500">
@@ -145,7 +146,7 @@ export const ReferenceCatalog: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button
-                        onClick={() => handleImportToStock(item)}
+                        onClick={() => handleImport(item)}
                         className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 mx-auto"
                       >
                         <Plus size={12} /> Importar a Inventario
