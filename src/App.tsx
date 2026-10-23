@@ -23,6 +23,7 @@ import { ProfessionalInvoice } from './components/Invoicing/ProfessionalInvoice'
 import { Payroll } from './components/Finance/Payroll';
 import { OCRInvoiceReader } from './components/OCRInvoiceReader';
 import { InvoiceHistory } from './components/InvoiceHistory';
+import { ReferenceCatalog } from './components/ReferenceCatalog';
 import { OnlineStoreView } from './components/Store/OnlineStoreView';
 import { OnlineOrdersManager } from './components/Store/OnlineOrdersManager';
 
@@ -85,6 +86,7 @@ function AppContent() {
             onNavigateToInventory={() => setActiveTab('inventory')}
           />
         );
+      case 'reference-catalog': return <ReferenceCatalog />;
       case 'invoice-history':
         return (
           <InvoiceHistory 
