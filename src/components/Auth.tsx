@@ -16,6 +16,7 @@ async function callApi(action: string, data: any = {}) {
 }
 
 interface AuthContextType {
+  permissions?: any;
   user: User | null;
   loading: boolean;
   signInWithGoogle: (credential: string, code?: string, intent?: 'admin' | 'user') => Promise<void>;
@@ -137,8 +138,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const permissions = user && (user as any).customPermissions ? (user as any).customPermissions : null;
+
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInAsDemo, signOut, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, permissions, signInWithGoogle, signInAsDemo, signOut, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
@@ -171,7 +174,9 @@ export const LoginView: React.FC<{ onExploreStore?: () => void }> = ({ onExplore
     s.async = true; s.defer = true;
     document.body.appendChild(s);
     s.onload = () => setScriptLoaded(true);
-    return () => { if (document.body.contains(s)) document.body.removeChild(s); };
+    const permissions = user && (user as any).customPermissions ? (user as any).customPermissions : null;
+
+  return () => { if (document.body.contains(s)) document.body.removeChild(s); };
   }, []);
 
   useEffect(() => {
@@ -198,6 +203,8 @@ export const LoginView: React.FC<{ onExploreStore?: () => void }> = ({ onExplore
       text: "continue_with", shape: "rectangular"
     });
   }, [scriptLoaded, signInWithGoogle]);
+
+  const permissions = user && (user as any).customPermissions ? (user as any).customPermissions : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-primary p-4 overflow-hidden relative">

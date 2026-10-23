@@ -1,36 +1,12 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from './Auth';
-import { 
-  Tractor, 
-  ShoppingCart, 
-  Package, 
-  Users, 
-  Truck, 
-  BarChart3, 
-  Settings, 
-  LogOut, 
-  Menu, 
-  X, 
-  Bell, 
-  Search, 
-  AlertTriangle, 
-  UserCheck, 
-  FileText, 
-  ShieldCheck, 
-  DollarSign, 
-  Clock, 
-  ScanText, 
-  Receipt, 
-  History,
-  ShoppingBag
-} from 'lucide-react';
+import { Tractor, BarChart3, Bell, BookOpen, ChevronLeft, ChevronRight, Clock, DollarSign, FileText, History, LogOut, Menu, Package, Receipt, ScanText, Search, Settings, Shield, ShieldCheck, ShoppingBag, ShoppingCart, Truck, UserCheck, Users, X, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { MultiAssistantChat } from './Assistant/MultiAssistantChat';
 import { Toaster, toast } from 'sonner';
 import { getProducts as getProductsApi } from '../lib/sheetsApi';
 import { Product } from '../types';
-import { Shield } from 'lucide-react';
 
 interface NavItemProps {
   icon: React.ElementType;
@@ -66,7 +42,7 @@ export const Layout: React.FC<{
   setActiveTab: (tab: string) => void;
   onSwitchToStore?: () => void;
 }> = ({ children, activeTab, setActiveTab, onSwitchToStore }) => {
-  const { user, signOut, permissions } = useContext(AuthContext);
+  const { user, signOut, permissions } = useContext(AuthContext) as any;
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [lowStockCount, setLowStockCount] = useState(0);
@@ -87,7 +63,6 @@ export const Layout: React.FC<{
         const allProducts = res.data as unknown as Product[];
         const lowStock = allProducts.filter(p => p.stock <= p.minStock);
 
-        // Check for NEW low stock products to show toast
         lowStock.forEach(p => {
           if (!prevLowStockIds.current.has(p.id)) {
             toast.warning(`Stock Bajo: ${p.description}`, {
@@ -100,7 +75,6 @@ export const Layout: React.FC<{
           }
         });
 
-        // Update the ref for the next snapshot
         prevLowStockIds.current = new Set(lowStock.map(p => p.id));
 
         setLowStockProducts(lowStock);
@@ -119,17 +93,17 @@ export const Layout: React.FC<{
     };
   }, [user, setActiveTab]);
 
-  // Hacer scroll hacia arriba automáticamente al cambiar de página
   useEffect(() => {
     if (contentScrollRef.current) {
       contentScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    setMobileMenuOpen(false); // Cerrar menú móvil si estaba abierto
+    setMobileMenuOpen(false);
   }, [activeTab]);
 
   const navItems = [
     { id: 'pos', label: 'Punto de Venta', icon: ShoppingCart, roles: ['ADMIN', 'GERENTE', 'CLERK', 'VENTAS', 'CAJERO', 'VENDEDOR'], perm: 'canAccessPOS' },
     { id: 'inventory', label: 'Inventario y Stock', icon: Package, roles: ['ADMIN', 'GERENTE', 'BODEGA', 'ALMACENISTA', 'VENTAS', 'VENDEDOR', 'CLERK', 'CAJERO'], perm: 'canAccessInventory' },
+    { id: 'reference-catalog', label: 'Catálogo de Partes', icon: BookOpen, roles: ['ADMIN', 'GERENTE', 'BODEGA', 'ALMACENISTA', 'VENTAS', 'VENDEDOR', 'CLERK', 'CAJERO'], perm: 'canAccessInventory' },
     { id: 'online-orders', label: 'Pedidos E-Commerce', icon: ShoppingBag, roles: ['ADMIN', 'GERENTE', 'VENTAS', 'VENDEDOR', 'BODEGA', 'ALMACENISTA'], perm: 'canAccessInventory' },
     { id: 'ocr-reader', label: 'Extractor de Facturas', icon: ScanText, roles: ['ADMIN', 'GERENTE', 'BODEGA', 'ALMACENISTA', 'CLERK', 'VENTAS', 'CAJERO', 'VENDEDOR'], perm: 'canAccessOCR' },
     { id: 'invoice-history', label: 'Historial de Facturas', icon: History, roles: ['ADMIN', 'GERENTE', 'BODEGA', 'ALMACENISTA', 'CLERK', 'VENTAS', 'CAJERO', 'VENDEDOR'], perm: 'canAccessInvoicing' },
@@ -158,7 +132,6 @@ export const Layout: React.FC<{
     return false;
   };
 
-  // Combined filter: role allowed AND permission granted (if permissions loaded)
   const filteredNavItems = navItems.filter(item => {
     if (user?.role === 'ADMIN') return true;
     if (!isRoleAllowed(item.roles, user?.role)) return false;
@@ -170,7 +143,6 @@ export const Layout: React.FC<{
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Sidebar Desktop */}
       <motion.aside
         animate={{ width: collapsed ? 80 : 280 }}
         className="hidden lg:flex flex-col bg-white border-r border-gray-100 shadow-sm relative z-30"
@@ -214,11 +186,6 @@ export const Layout: React.FC<{
                   Ver
                 </span>
               )}
-              {collapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-emerald-950 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap shadow-lg">
-                  Abrir Tienda Virtual
-                </div>
-              )}
             </button>
           </div>
         )}
@@ -254,7 +221,6 @@ export const Layout: React.FC<{
         </div>
       </motion.aside>
 
-      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -267,7 +233,6 @@ export const Layout: React.FC<{
         )}
       </AnimatePresence>
 
-      {/* Sidebar Mobile */}
       <motion.aside
         initial={{ x: -300 }}
         animate={{ x: mobileMenuOpen ? 0 : -300 }}
@@ -275,12 +240,9 @@ export const Layout: React.FC<{
       >
         <div className="p-6 flex items-center justify-between border-b border-gray-50">
           <div 
-          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => {
-            setActiveTab('pos');
-            setMobileMenuOpen(false); // Cierra el menú al ir al Home
-          }}
-        >
+            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => { setActiveTab('pos'); setMobileMenuOpen(false); }}
+          >
             <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg">
               <Tractor size={24} />
             </div>
@@ -291,24 +253,6 @@ export const Layout: React.FC<{
           </button>
         </div>
 
-        {onSwitchToStore && (
-          <div className="p-4 border-b border-gray-100">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onSwitchToStore();
-              }}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-bold text-sm shadow-md active:scale-95 transition-all"
-            >
-              <div className="flex items-center gap-2.5">
-                <ShoppingBag size={20} />
-                <span>Ir a Tienda Virtual</span>
-              </div>
-              <span className="text-xs bg-white/20 px-2 py-0.5 rounded font-bold">Online</span>
-            </button>
-          </div>
-        )}
-
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {filteredNavItems.map((item) => (
             <NavItem
@@ -316,10 +260,7 @@ export const Layout: React.FC<{
               icon={item.icon}
               label={item.label}
               active={activeTab === item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                setMobileMenuOpen(false);
-              }}
+              onClick={() => { setActiveTab(item.id); setMobileMenuOpen(false); }}
             />
           ))}
         </nav>
@@ -334,9 +275,7 @@ export const Layout: React.FC<{
         </div>
       </motion.aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
         <header className="h-16 bg-white border-b border-gray-100 px-3 sm:px-4 lg:px-6 flex items-center justify-between shrink-0 z-20 min-w-0">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button
@@ -352,20 +291,6 @@ export const Layout: React.FC<{
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-            {onSwitchToStore && (
-              <button
-                onClick={onSwitchToStore}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-emerald-700/20 active:scale-95 shrink-0"
-                title="Abrir la Tienda Virtual E-Commerce"
-              >
-                <ShoppingBag size={14} className="shrink-0" />
-                <span className="hidden xs:inline sm:inline">Tienda</span>
-                <span className="bg-emerald-500/40 text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded">
-                  Online
-                </span>
-              </button>
-            )}
-
             <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2 w-60">
               <Search size={18} className="text-gray-400 mr-2" />
               <input 
@@ -407,10 +332,7 @@ export const Layout: React.FC<{
                       {lowStockProducts.map(product => (
                         <button
                           key={product.id}
-                          onClick={() => {
-                            setActiveTab('inventory');
-                            setShowNotifications(false);
-                          }}
+                          onClick={() => { setActiveTab('inventory'); setShowNotifications(false); }}
                           className="w-full p-4 hover:bg-gray-50 flex items-start gap-3 border-b border-gray-50 last:border-0 text-left transition-colors"
                         >
                           <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
@@ -421,22 +343,10 @@ export const Layout: React.FC<{
                             <p className="text-xs text-gray-500 mt-0.5">
                               Stock: <span className="font-bold text-red-500">{product.stock}</span> / Mín: {product.minStock}
                             </p>
-                            <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">
-                              {product.pieceNumber} • {product.brand}
-                            </p>
                           </div>
                         </button>
                       ))}
                     </div>
-                    <button 
-                      onClick={() => {
-                        setActiveTab('inventory');
-                        setShowNotifications(false);
-                      }}
-                      className="w-full p-3 text-center text-xs font-bold text-primary hover:bg-gray-50 transition-colors"
-                    >
-                      Ir al Inventario Completo
-                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -458,7 +368,6 @@ export const Layout: React.FC<{
           </div>
         </header>
 
-        {/* Content Area */}
         <div ref={contentScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 lg:p-6 relative max-w-full min-w-0">
           {children}
         </div>
