@@ -40,84 +40,72 @@ export const AssistantSettings: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    if (!user) return;
+    useEffect(() => {
+    const savedAssistants = localStorage.getItem('fp_assistants');
+    const savedGlobal = localStorage.getItem('fp_global_assistant');
+    
+    if (savedAssistants) {
+      setAssistants(JSON.parse(savedAssistants));
+    } else {
+      setAssistants([{
+        id: 'default',
+        name: 'Asistente AgroParts',
+        avatar: '🤖',
+        color: '#2563eb',
+        specialty: 'general',
+        isActive: true,
+        identity: { description: '¿En qué te puedo ayudar?', instructions: 'Eres un experto en refacciones agrícolas.' },
+        behavior: { tone: 'friendly', language: 'Español', quickCommands: ['¿Cómo va el día?', 'Alertas de stock'], autonomyLevel: 1, sessionDuration: 30, contextMemory: true },
+        enabledFunctions: ['consult_stock', 'search_customers'],
+        permissions: { canAccessInventory: true, canAccessSales: true, canAccessCustomers: true, canAccessReports: true, canExecuteActions: true },
+        notifications: { enableAlerts: true, alertTypes: ['low_stock'] }
+      }]);
+    }
 
-    // Firebase eliminado
-    // Firebase eliminado
-
-    const settingsRef = doc(db, 'assistant_settings', 'global');
-    // Firebase eliminado
-
-    return () => {
-      unsubscribe();
-      unsubscribeSettings();
-    };
+    if (savedGlobal) setGlobalSettings(JSON.parse(savedGlobal));
+    setLoading(false);
   }, [user]);
 
+    const saveToLocal = (newAssistants: VirtualAssistant[]) => {
+    setAssistants(newAssistants);
+    localStorage.setItem('fp_assistants', JSON.stringify(newAssistants));
+  };
+
   const handleToggle = async (id: string, isActive: boolean) => {
-    try {
-      await updateDoc(doc(db, 'virtual_assistants', id), { isActive, updatedAt: serverTimestamp() });
-      toast.success(isActive ? "Asistente activado" : "Asistente desactivado");
-    } catch (error) {
-      toast.error("Error al actualizar el estado");
-    }
+    const updated = assistants.map(a => a.id === id ? { ...a, isActive } : a);
+    saveToLocal(updated);
+    toast.success(isActive ? "Asistente activado" : "Asistente desactivado");
   };
 
   const handleSaveAssistant = async (data: Partial<VirtualAssistant>) => {
-    try {
-      if (selectedAssistant) {
-        await updateDoc(doc(db, 'virtual_assistants', selectedAssistant.id), {
-          ...data,
-          updatedAt: serverTimestamp()
-        });
-        toast.success("Asistente actualizado correctamente");
-      } else {
-        await addDoc(collection(db, 'virtual_assistants'), {
-          ...data,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-        toast.success("Nuevo asistente creado correctamente");
-      }
-    } catch (error) {
-      console.error("Error saving assistant:", error);
-      toast.error("Error al guardar el asistente");
+    if (selectedAssistant) {
+      const updated = assistants.map(a => a.id === selectedAssistant.id ? { ...a, ...data } as VirtualAssistant : a);
+      saveToLocal(updated);
+      toast.success("Asistente actualizado");
+    } else {
+      const newAssistant = { ...data, id: Date.now().toString() } as VirtualAssistant;
+      saveToLocal([...assistants, newAssistant]);
+      toast.success("Asistente creado");
     }
   };
 
   const handleDuplicate = async (assistant: VirtualAssistant) => {
-    try {
-      const { id, createdAt, updatedAt, ...rest } = assistant;
-      await addDoc(collection(db, 'virtual_assistants'), {
-        ...rest,
-        name: `${rest.name} (Copia)`,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      toast.success("Asistente duplicado correctamente");
-    } catch (error) {
-      toast.error("Error al duplicar el asistente");
-    }
+    const newAssistant = { ...assistant, id: Date.now().toString(), name: `${assistant.name} (Copia)` };
+    saveToLocal([...assistants, newAssistant]);
+    toast.success("Asistente duplicado");
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este asistente?")) return;
-    try {
-      await deleteDoc(doc(db, 'virtual_assistants', id));
-      toast.success("Asistente eliminado");
-    } catch (error) {
-      toast.error("Error al eliminar el asistente");
-    }
+    if (!window.confirm("¿Estás seguro de eliminar este asistente?")) return;
+    saveToLocal(assistants.filter(a => a.id !== id));
+    toast.success("Asistente eliminado");
   };
 
   const updateGlobalSettings = async (updates: Partial<AssistantGlobalSettings>) => {
-    try {
-      await updateDoc(doc(db, 'assistant_settings', 'global'), updates);
-      toast.success("Ajustes globales actualizados");
-    } catch (error) {
-      toast.error("Error al actualizar ajustes globales");
-    }
+    const newSettings = { ...globalSettings, ...updates };
+    setGlobalSettings(newSettings);
+    localStorage.setItem('fp_global_assistant', JSON.stringify(newSettings));
+    toast.success("Ajustes globales actualizados");
   };
 
   const filteredAssistants = assistants.filter(a => 

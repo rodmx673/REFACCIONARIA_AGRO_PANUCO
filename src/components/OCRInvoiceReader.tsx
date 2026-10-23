@@ -462,7 +462,7 @@ export const OCRInvoiceReader: React.FC<OCRInvoiceReaderProps> = ({
     setResult({ ...result, articulos: newArticles });
   };
 
-  const importToInventory = async () => {
+    const importToInventory = async () => {
     if (!result || result.articulos.length === 0) {
       toast.warning('No hay artículos para importar');
       return;
@@ -473,6 +473,7 @@ export const OCRInvoiceReader: React.FC<OCRInvoiceReaderProps> = ({
       const invoiceRef = result.numero_factura || `DOC-${new Date().toISOString().slice(0, 10)}`;
       const vendorName = result.proveedor || 'Proveedor General';
       let importedCount = 0;
+      const url = import.meta.env.VITE_APPS_SCRIPT_URL;
 
       for (const item of result.articulos) {
         if (!item.descripcion) continue;
@@ -481,34 +482,42 @@ export const OCRInvoiceReader: React.FC<OCRInvoiceReaderProps> = ({
         const unitPrice = typeof item.precio_unitario === 'number' && item.precio_unitario > 0 ? item.precio_unitario : 0;
         const salePrice = unitPrice > 0 ? Math.round(unitPrice * 1.35 * 100) / 100 : 100;
 
-        const productDoc = await addDoc(collection(db, 'products'), {
-          pieceNumber: item.codigo || `REF-${Math.floor(100000 + Math.random() * 900000)}`,
-          description: item.descripcion,
-          brand: 'GENÉRICA / OEM',
-          model: 'Universal',
-          costPrice: unitPrice,
-          salePrice: salePrice,
-          stock: quantity,
-          minStock: 2,
-          location: 'Pasillo Entrada / Recepción',
-          category: 'Refacciones Importadas',
-          vendorId: vendorName,
-          leadTime: 5,
-          invoiceReference: invoiceRef
+        // 1. Crear producto en Google Sheets
+        const prodRes = await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'createOrUpdateProduct', data: {
+            pieceNumber: item.codigo || ('REF-' + Math.floor(100000 + Math.random() * 900000)),
+            description: item.descripcion,
+            brand: 'GENÉRICA / OEM',
+            model: 'Universal',
+            purchasePrice: unitPrice,
+            salePrice: salePrice,
+            stock: quantity,
+            minStock: 2,
+            location: 'RECEPCIÓN',
+            invoiceReference: invoiceRef,
+            vendorId: vendorName
+          }})
         });
+        
+        const prodData = await prodRes.json();
 
-        // Register inventory movement with reference
-        await addDoc(collection(db, 'inventoryMovements'), {
-          productId: productDoc.id,
-          type: 'IN',
-          quantity: quantity,
-          reason: `Alta vía Extractor de Facturas según Factura ${invoiceRef}`,
-          timestamp: new Date().toISOString(),
-          userId: auth.currentUser?.uid || 'extractor-ia',
-          invoiceReference: invoiceRef
-        });
-
-        importedCount++;
+        if (prodData.success) {
+          // 2. Registrar movimiento en Google Sheets
+          await fetch(url, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'createMovement', data: {
+              productId: prodData.data.id,
+              type: 'IN',
+              quantity: quantity,
+              reason: `Alta vía Extractor de Facturas según Factura ${invoiceRef}`,
+              timestamp: new Date().toISOString(),
+              userId: 'extractor-ia',
+              invoiceReference: invoiceRef
+            }})
+          });
+          importedCount++;
+        }
       }
 
       toast.success('Artículos importados a inventario', {
@@ -516,56 +525,79 @@ export const OCRInvoiceReader: React.FC<OCRInvoiceReaderProps> = ({
       });
     } catch (err: any) {
       console.error('Error importing to inventory:', err);
-      
+      toast.error('Error al importar a inventario: ' + err.message);
     } finally {
       setIsSavingStock(false);
     }
   };
 
+    const uploadToCloudinary = async (fileToUpload: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', fileToUpload);
+    formData.append('upload_preset', 'REFACCIONARIA_PANUCO');
+    
+    // Usamos 'auto' para que acepte imágenes y PDFs
+    const res = await fetch('https://api.cloudinary.com/v1_1/dabe5peol/auto/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (data.secure_url) return data.secure_url;
+    throw new Error('Error al subir a Cloudinary');
+  };
   const saveToInvoiceHistory = async () => {
     if (!result) return;
     setIsSavingHistory(true);
     try {
       const invoiceNumber = result.numero_factura || `FAC-${new Date().toISOString().slice(0, 10)}`;
       const vendor = result.proveedor || 'Proveedor General';
-      const totalAmount = result.total !== null && result.total !== undefined
-        ? Number(result.total)
-        : (result.subtotal ? Number(result.subtotal) * 1.16 : 0);
+      
+      // Corregir formato de fecha si viene en ISO largo
+      let formattedDate = result.fecha || new Date().toISOString().slice(0, 10);
+      if (formattedDate.includes('T')) {
+        formattedDate = formattedDate.split('T')[0];
+      }
 
-      const subtotalVal = result.subtotal !== null && result.subtotal !== undefined
-        ? Number(result.subtotal)
-        : Math.round((totalAmount / 1.16) * 100) / 100;
+      const totalAmount = result.total !== null && result.total !== undefined ? Number(result.total) : (result.subtotal ? Number(result.subtotal) * 1.16 : 0);
+      const subtotalVal = result.subtotal !== null && result.subtotal !== undefined ? Number(result.subtotal) : Math.round((totalAmount / 1.16) * 100) / 100;
+      const ivaVal = result.iva !== null && result.iva !== undefined ? Number(result.iva) : Math.round((totalAmount - subtotalVal) * 100) / 100;
 
-      const ivaVal = result.iva !== null && result.iva !== undefined
-        ? Number(result.iva)
-        : Math.round((totalAmount - subtotalVal) * 100) / 100;
+      // Subir archivo a Cloudinary
+      let uploadedFileUrl = '';
+      if (file) {
+        toast.loading('Subiendo archivo a la nube...', { id: 'cloudinary-upload' });
+        uploadedFileUrl = await uploadToCloudinary(file);
+        toast.dismiss('cloudinary-upload');
+      }
 
-      const isImg = previewType === 'image';
-      const isPdf = previewType === 'pdf';
-      const docRefName = file?.name || (isPdf ? `factura_${invoiceNumber}.pdf` : `factura_${invoiceNumber}.jpg`);
-      const docData = fileDataUri || (previewUrl?.startsWith('http') ? previewUrl : undefined);
-
-      await addDoc(collection(db, 'invoices_history'), {
+      const payload = {
         numero_factura: invoiceNumber,
-        fecha: result.fecha || new Date().toISOString().slice(0, 10),
+        fecha: formattedDate,
         proveedor: vendor,
-        rfc_proveedor: result.rfc_proveedor || undefined,
+        rfc_proveedor: result.rfc_proveedor || '',
         importe: totalAmount,
         subtotal: subtotalVal,
         iva: ivaVal,
         moneda: result.moneda || 'MXN',
         documentType: previewType,
-        imageReference: docRefName,
-        originalImageUrl: isImg ? docData : undefined,
-        documentUrl: !isImg ? docData : undefined,
-        pdfDataUri: isPdf ? fileDataUri : undefined,
+        imageReference: file?.name || '',
+        originalImageUrl: previewType === 'image' ? uploadedFileUrl : '',
+        documentUrl: previewType !== 'image' ? uploadedFileUrl : '',
         articulos: result.articulos || [],
         status: 'REGISTRADA',
-        createdAt: new Date().toISOString()
+        faltantes: []
+      };
+
+      const res = await fetch(import.meta.env.VITE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'createInvoiceHistory', data: payload })
       });
+      const data = await res.json();
+      
+      if (!data.success) throw new Error(data.error);
 
       toast.success('Factura guardada en el Historial', {
-        description: `Folio ${invoiceNumber} registrado correctamente con sus artículos.`,
+        description: `Folio ${invoiceNumber} registrado correctamente.`,
         action: onNavigateToHistory ? {
           label: 'Ver Historial',
           onClick: onNavigateToHistory
@@ -573,7 +605,7 @@ export const OCRInvoiceReader: React.FC<OCRInvoiceReaderProps> = ({
       });
     } catch (err: any) {
       console.error('Error saving invoice to history:', err);
-      
+      toast.error('Error al guardar en historial: ' + err.message);
     } finally {
       setIsSavingHistory(false);
     }
@@ -1352,41 +1384,46 @@ export const OCRInvoiceReader: React.FC<OCRInvoiceReaderProps> = ({
           vendorName={result.proveedor}
           articles={result.articulos || []}
           onNavigateToInventory={onNavigateToInventory}
-          onSuccess={(count, invoiceRef) => {
-            // Also save to invoice history with the confirmed invoice reference!
+          onSuccess={async (count, invoiceRef) => {
             try {
-              const totalAmount = result.total !== null && result.total !== undefined
-                ? Number(result.total)
-                : (result.subtotal ? Number(result.subtotal) * 1.16 : 0);
-              const subtotalVal = result.subtotal !== null && result.subtotal !== undefined
-                ? Number(result.subtotal)
-                : Math.round((totalAmount / 1.16) * 100) / 100;
-              const ivaVal = result.iva !== null && result.iva !== undefined
-                ? Number(result.iva)
-                : Math.round((totalAmount - subtotalVal) * 100) / 100;
+              // 1. Subir archivo a Cloudinary
+              let uploadedFileUrl = '';
+              if (file) {
+                toast.loading('Subiendo archivo a la nube...', { id: 'cloudinary-upload' });
+                uploadedFileUrl = await uploadToCloudinary(file);
+                toast.dismiss('cloudinary-upload');
+              }
 
-              addDoc(collection(db, 'invoices_history'), {
+              // 2. Formatear fecha para quitar la "T" y la "Z"
+              let formattedDate = result.fecha || new Date().toISOString().slice(0, 10);
+              if (formattedDate.includes('T')) formattedDate = formattedDate.split('T')[0];
+
+              // 3. Crear payload
+              const totalAmount = result.total !== null && result.total !== undefined ? Number(result.total) : 0;
+              const payload = {
                 numero_factura: invoiceRef,
-                fecha: result.fecha || new Date().toISOString().slice(0, 10),
+                fecha: formattedDate,
                 proveedor: result.proveedor || 'Proveedor General',
-                rfc_proveedor: result.rfc_proveedor || undefined,
+                rfc_proveedor: result.rfc_proveedor || '',
                 importe: totalAmount,
-                subtotal: subtotalVal,
-                iva: ivaVal,
+                subtotal: result.subtotal || 0,
+                iva: result.iva || 0,
                 moneda: result.moneda || 'MXN',
                 documentType: previewType,
-                imageReference: file?.name || (previewType === 'pdf' ? `factura_${invoiceRef}.pdf` : `factura_${invoiceRef}.jpg`),
-                originalImageUrl: previewType === 'image' ? (fileDataUri || (previewUrl?.startsWith('http') ? previewUrl : undefined)) : undefined,
-                documentUrl: previewType !== 'image' ? (fileDataUri || (previewUrl?.startsWith('http') ? previewUrl : undefined)) : undefined,
-                pdfDataUri: previewType === 'pdf' ? fileDataUri : undefined,
+                imageReference: file?.name || '',
+                originalImageUrl: previewType === 'image' ? uploadedFileUrl : '',
+                documentUrl: previewType !== 'image' ? uploadedFileUrl : '',
                 articulos: result.articulos || [],
-                status: 'IMPORTADA_A_INVENTARIO',
-                importedToInventory: true,
-                importedAt: new Date().toISOString(),
-                createdAt: new Date().toISOString()
+                status: 'IMPORTADA_A_INVENTARIO'
+              };
+
+              await fetch(import.meta.env.VITE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'createInvoiceHistory', data: payload })
               });
             } catch (e) {
               console.error('Error auto-saving invoice to history after import:', e);
+              toast.error('Error al subir el archivo original');
             }
           }}
         />

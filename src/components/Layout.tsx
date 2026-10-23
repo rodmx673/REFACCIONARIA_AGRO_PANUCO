@@ -44,11 +44,22 @@ export const Layout: React.FC<{
 }> = ({ children, activeTab, setActiveTab, onSwitchToStore }) => {
   const { user, signOut, permissions } = useContext(AuthContext) as any;
   const [collapsed, setCollapsed] = useState(false);
+  const [activeModules, setActiveModules] = useState<Record<string, boolean>>({
+    pos: true, inventory: true, catalog: true, ecommerce: true, ocr: true, invoices: true,
+    customers: true, vendors: true, reports: true, hr: false, commissions: false, 
+    attendance: false, payroll: false, invoicing: true, sat: false, admin: true, settings: true
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const prevLowStockIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const savedModules = localStorage.getItem('fp_modules');
+    if (savedModules) {
+      try { setActiveModules(JSON.parse(savedModules)); } catch (e) {}
+    }
+  }, []);
   const contentScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -132,6 +143,24 @@ export const Layout: React.FC<{
   };
 
   const filteredNavItems = navItems.filter(item => {
+    // Ocultar módulos desactivados en configuraciones
+    if (item.id === 'pos' && !activeModules.pos) return false;
+    if (item.id === 'inventory' && !activeModules.inventory) return false;
+    if (item.id === 'reference-catalog' && !activeModules.catalog) return false;
+    if (item.id === 'online-orders' && !activeModules.ecommerce) return false;
+    if (item.id === 'ocr-reader' && !activeModules.ocr) return false;
+    if (item.id === 'invoice-history' && !activeModules.invoices) return false;
+    if (item.id === 'customers' && !activeModules.customers) return false;
+    if (item.id === 'vendors' && !activeModules.vendors) return false;
+    if (item.id === 'reports' && !activeModules.reports) return false;
+    if (item.id === 'employees' && !activeModules.hr) return false;
+    if (item.id === 'commissions' && !activeModules.commissions) return false;
+    if (item.id === 'attendance' && !activeModules.attendance) return false;
+    if (item.id === 'payroll' && !activeModules.payroll) return false;
+    if (item.id === 'invoicing' && !activeModules.invoicing) return false;
+    if (item.id === 'sat-config' && !activeModules.sat) return false;
+    if (item.id === 'admin-panel' && !activeModules.admin) return false;
+    if (item.id === 'settings' && !activeModules.settings) return false;
     if (user?.role === 'ADMIN') return true;
     if (!isRoleAllowed(item.roles, user?.role)) return false;
     if (permissions && item.perm) {

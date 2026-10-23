@@ -2,13 +2,12 @@
 import { GoogleGenAI } from "@google/genai";
 import Groq from "groq-sdk";
 
-// ⚠️ SOLO PRUEBAS LOCALES — revocar keys después
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
-const GEMINI_VISION_MODEL = "gemini-3.8-flash";
+const GEMINI_MODEL = "gemini-1.5-flash"; // Modelo real y rápido
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || "";
-// Modelo de Groq CON visión (soporta image_url con base64)
-const GROQ_VISION_MODEL = "qwen/qwen3.8-27b";
+const GROQ_TEXT_MODEL = "openai/gpt-oss-120b"; // Excelente para chat
+const GROQ_VISION_MODEL = "llama-3.2-11b-vision-preview"; // Modelo con visión
 
 let cachedGemini: GoogleGenAI | null = null;
 function getGemini(): GoogleGenAI {
@@ -33,47 +32,52 @@ export async function generateContentWithFallback(
 ): Promise<{ text: string }> {
   const imagePart = contents.find((p: any) => p.inlineData);
   const textPart = contents.find((p: any) => p.text);
-
-  // ============ INTENTO 1: GEMINI con backoff ============
-  const maxRetries = 2;
   let geminiError: any = null;
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  // ============ CASO 1: ES TEXTO (EL CHAT) ============
+  if (!imagePart) {
+    console.log("[AI] Solicitud de texto detectada. Usando Groq...");
     try {
-      console.log(`[Gemini] Intento ${attempt}/${maxRetries}...`);
-      const ai = getGemini();
-      const response = await ai.models.generateContent({
-        model: GEMINI_VISION_MODEL,
-        contents,
-        config,
+      const groq = getGroq();
+      const completion = await groq.chat.completions.create({
+        model: GROQ_TEXT_MODEL,
+        messages: [
+          { role: "system", content: config?.systemInstruction || "Eres un asistente útil." },
+          { role: "user", content: textPart?.text || "Hola" }
+        ],
+        temperature: 0.7,
       });
-      console.log("✅ Gemini respondió correctamente");
-      return { text: response.text || "" };
-    } catch (err: any) {
-      geminiError = err;
-      const status = err?.status || err?.error?.code;
-      const msg = String(err?.message || "");
-      console.warn(`⚠️ Gemini intento ${attempt} falló: ${status || msg.slice(0, 100)}`);
-
-      if (
-        (status === 503 || status === 429 || msg.includes("UNAVAILABLE")) &&
-        attempt < maxRetries
-      ) {
-        const waitMs = Math.pow(2, attempt) * 1000;
-        console.log(`   Reintentando en ${waitMs / 1000}s...`);
-        await new Promise((r) => setTimeout(r, waitMs));
-        continue;
-      }
-      break;
+      const text = completion.choices?.[0]?.message?.content || "";
+      if (text) return { text };
+    } catch (err) {
+      console.error("Groq falló en texto:", err);
+      // Si Groq falla en texto, intentamos con Gemini de respaldo
     }
   }
 
-  // ============ INTENTO 2: GROQ como FALLBACK ============
+  // ============ CASO 2: ES IMAGEN (FACTURAS) ============
+  // Intentar con Gemini
+  if (GEMINI_API_KEY.startsWith("AIzaSy")) {
+    try {
+      console.log("[AI] Intentando con Gemini Vision...");
+      const ai = getGemini();
+      const response = await ai.models.generateContent({
+        model: GEMINI_MODEL,
+        contents,
+        config,
+      });
+      if (response.text) return { text: response.text };
+    } catch (err: any) {
+      geminiError = err;
+      console.warn("Gemini falló:", err?.message);
+    }
+  }
+
+  // Si falló Gemini o es imagen sin Gemini válido, intentamos Groq Vision
   if (imagePart && textPart && GROQ_API_KEY) {
     try {
-      console.log("🔁 Gemini agotado. Probando Groq Vision...");
+      console.log("[AI] Intentando con Groq Vision...");
       const groq = getGroq();
-
       const completion = await groq.chat.completions.create({
         model: GROQ_VISION_MODEL,
         messages: [
@@ -92,23 +96,15 @@ export async function generateContentWithFallback(
         ],
         temperature: 0.2,
       });
-
       const text = completion.choices?.[0]?.message?.content || "";
-      if (!text) throw new Error("Groq devolvió respuesta vacía");
-      console.log("✅ Groq respondió correctamente");
-      return { text };
+      if (text) return { text };
     } catch (groqErr: any) {
-      console.error("❌ Groq también falló:", groqErr?.message || groqErr);
-      throw new Error(
-        `Ningún servicio de IA respondió.\n` +
-          `Gemini: ${geminiError?.message?.slice(0, 150)}\n` +
-          `Groq: ${groqErr?.message?.slice(0, 150)}`
-      );
+      console.error("Groq Vision falló:", groqErr?.message);
+      throw new Error(`Ningún servicio respondió. Gemini: ${geminiError?.message} | Groq: ${groqErr?.message}`);
     }
   }
 
-  // Sin imagen → no intentar Groq Vision
-  throw new Error(geminiError?.message || "Gemini falló y no hay imagen para Groq");
+  throw new Error(geminiError?.message || "No se pudo procesar la solicitud con IA.");
 }
 
 export function parseJsonFromMarkdown(text: string): any {

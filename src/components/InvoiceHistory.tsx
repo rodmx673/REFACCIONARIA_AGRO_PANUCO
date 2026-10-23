@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Search, ImageIcon, Plus, ArrowLeft, Trash2, Calendar, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { FileText, Search, ImageIcon, Plus, ArrowLeft, Trash2, Calendar, Link as LinkIcon, Loader2, ExternalLink, Package } from 'lucide-react';
 import { InvoiceHistoryRecord } from '../types';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
@@ -93,10 +93,53 @@ export const InvoiceHistory: React.FC<{ onNavigateToExtractor?: () => void; onNa
                 </div>
                 <button onClick={() => setSelectedInvoice(null)} className="text-gray-400 hover:text-gray-700">Cerrar</button>
               </div>
-              <div className="p-4 bg-gray-50 rounded-xl space-y-2">
-                <p className="text-sm text-gray-700">Fecha: <span className="font-bold">{selectedInvoice.fecha}</span></p>
-                <p className="text-sm text-gray-700">Importe: <span className="font-bold text-primary">${Number(selectedInvoice.importe).toLocaleString()}</span></p>
+              <div className="p-4 bg-gray-50 rounded-xl space-y-3">
+                <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                  <span className="text-sm text-gray-500">Fecha:</span>
+                  <span className="font-bold text-gray-900">{selectedInvoice.fecha?.split('T')[0] || 'Sin fecha'}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                  <span className="text-sm text-gray-500">Importe:</span>
+                  <span className="font-bold text-primary text-lg">${Number(selectedInvoice.importe).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-sm text-gray-500">Archivo Original:</span>
+                  {selectedInvoice.originalImageUrl || selectedInvoice.documentUrl ? (
+                    <a 
+                      href={selectedInvoice.originalImageUrl || selectedInvoice.documentUrl} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-colors shadow-sm"
+                    >
+                      <ExternalLink size={14} /> Abrir Archivo
+                    </a>
+                  ) : (
+                    <span className="text-xs font-bold text-gray-400 bg-gray-200 px-2 py-1 rounded">No adjunto</span>
+                  )}
+                </div>
               </div>
+              
+              {/* Sección para mostrar los artículos extraídos (opcional pero útil) */}
+              {selectedInvoice.articulos && selectedInvoice.articulos.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1 mb-2">
+                    <Package size={14} /> Artículos Detectados ({selectedInvoice.articulos.length})
+                  </h4>
+                  <div className="max-h-40 overflow-y-auto bg-white border border-gray-100 rounded-xl">
+                    <table className="w-full text-left text-xs">
+                      <tbody className="divide-y divide-gray-50">
+                        {selectedInvoice.articulos.map((art: any, i: number) => (
+                          <tr key={i} className="hover:bg-gray-50">
+                            <td className="px-3 py-2 font-medium truncate max-w-[200px]">{art.descripcion || 'Sin descripción'}</td>
+                            <td className="px-3 py-2 text-center text-gray-500">{art.cantidad || 1} pzas</td>
+                            <td className="px-3 py-2 text-right font-bold text-gray-700">${Number(art.precio_unitario || 0).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </div>
         )}
