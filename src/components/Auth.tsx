@@ -64,7 +64,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (myUserRes.success && myUserRes.data) {
       const dbUser = myUserRes.data;
       
-      // Si intenta entrar como Admin, validar que realmente lo sea
       if (intent === 'admin' && dbUser.role !== 'ADMIN' && !isBootstrap) {
         throw new Error('Esta cuenta de Google no tiene privilegios de Administrador.');
       }
@@ -147,10 +146,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-declare global {
-  interface Window { google: any; }
-}
-
 export const LoginView: React.FC<{ onExploreStore?: () => void }> = ({ onExploreStore }) => {
   const { signInWithGoogle, signInAsDemo } = useContext(AuthContext);
   const buttonRef = useRef<HTMLDivElement>(null);
@@ -174,9 +169,8 @@ export const LoginView: React.FC<{ onExploreStore?: () => void }> = ({ onExplore
     s.async = true; s.defer = true;
     document.body.appendChild(s);
     s.onload = () => setScriptLoaded(true);
-    const permissions = user && (user as any).customPermissions ? (user as any).customPermissions : null;
-
-  return () => { if (document.body.contains(s)) document.body.removeChild(s); };
+    
+    return () => { if (document.body.contains(s)) document.body.removeChild(s); };
   }, []);
 
   useEffect(() => {
@@ -198,13 +192,11 @@ export const LoginView: React.FC<{ onExploreStore?: () => void }> = ({ onExplore
       }
     });
 
-    window.google.accounts.id.renderButton(buttonRef.current, {
-      theme: "outline", size: "large", width: "100%",
+        window.google.accounts.id.renderButton(buttonRef.current, {
+      theme: "outline", size: "large", width: 380, // ✅ Cambiado "100%" por 380
       text: "continue_with", shape: "rectangular"
     });
   }, [scriptLoaded, signInWithGoogle]);
-
-  const permissions = user && (user as any).customPermissions ? (user as any).customPermissions : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-primary p-4 overflow-hidden relative">
