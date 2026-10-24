@@ -135,7 +135,7 @@ export const Inventory: React.FC<{ prefilledProduct?: any; onClearPrefilled?: ()
     if (prefilledProduct) {
       setFormData(prev => ({
         ...prev,
-        pieceNumber: prefilledProduct.partNumber || '',
+        pieceNumber: prefilledProduct.oemNumber || prefilledProduct.partNumber || '',
         description: prefilledProduct.description || '',
         salePrice: prefilledProduct.price || 0,
         purchasePrice: 0, // Se deja en 0 para que el usuario lo ingrese

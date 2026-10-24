@@ -45,30 +45,53 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   } = useStore();
 
   const [activeTab, setActiveTab] = useState<'orders' | 'wishlist' | 'credit' | 'addresses'>('orders');
-  const [emailInput, setEmailInput] = useState(clientEmail || 'cliente@farmerparts.mx');
+  const [emailInput, setEmailInput] = useState(clientEmail || '');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
   // Fetch orders when email changes
   useEffect(() => {
-    if (!emailInput.trim()) return;
-    setLoadingOrders(true);
-
-    // Firebase eliminado
-    // Firebase eliminado
-
+    const trimmedEmail = emailInput.trim().toLowerCase();
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      setOrders([]);
+      setLoadingOrders(false);
+      return;
+    }
     
+    const fetchOrders = async () => {
+      setLoadingOrders(true);
+      try {
+        const res = await fetch(import.meta.env.VITE_APPS_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ 
+            action: 'getOnlineOrders', 
+            data: { email: trimmedEmail } 
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setOrders(data.data || []);
+        }
+      } catch (error) {
+        console.error("Error cargando pedidos:", error);
+      } finally {
+        setLoadingOrders(false);
+      }
+    };
+
+    fetchOrders();
   }, [emailInput]);
 
   const handleSearchEmail = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailInput.includes('@')) {
-      toast.error('Ingresa un correo electrónico válido');
+    const cleanEmail = emailInput.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@') || cleanEmail.split('@').length > 2) {
+      toast.error('Ingresa un correo electrónico válido (ej. cliente@correo.com)');
       return;
     }
-    setClientEmail(emailInput.trim().toLowerCase());
-    refreshClientOrders(emailInput.trim().toLowerCase());
-    toast.success(`Consultando pedidos para ${emailInput}`);
+    setClientEmail(cleanEmail);
+    setEmailInput(cleanEmail); // Forzar actualización para disparar el useEffect
+    toast.success(`Consultando pedidos para ${cleanEmail}`);
   };
 
   const wishlistedProducts = products.filter(p => wishlist.includes(p.id));

@@ -68,6 +68,8 @@ export interface Product {
   leadTime: number;
   category: string;
   invoiceReference?: string;
+  references?: any; // ✅ AGREGADO: Soluciona el error 2339 en Inventory.tsx
+  images?: any;
 }
 
 export interface SaleItem {
@@ -488,5 +490,3 @@ export interface SupportTicket {
   status: 'OPEN' | 'IN_PROGRESS' | 'CLOSED';
   createdAt: string;
 }
-
-
