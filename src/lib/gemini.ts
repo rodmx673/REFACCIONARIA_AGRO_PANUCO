@@ -7,7 +7,7 @@ const GEMINI_MODEL = "gemini-1.5-flash"; // Modelo real y rápido
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || "";
 const GROQ_TEXT_MODEL = "openai/gpt-oss-120b"; // Excelente para chat
-const GROQ_VISION_MODEL = "llama-3.2-11b-vision-preview"; // Modelo con visión
+const GROQ_VISION_MODEL = "qwen/qwen3.8-27b"; // Modelo con visión
 
 let cachedGemini: GoogleGenAI | null = null;
 function getGemini(): GoogleGenAI {

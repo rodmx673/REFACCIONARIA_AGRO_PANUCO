@@ -9,7 +9,7 @@ const BOOTSTRAP_ADMIN = import.meta.env.VITE_BOOTSTRAP_ADMIN_EMAIL || 'rod.mx673
 async function callApi(action: string, data: any = {}) {
   const res = await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 👈 CAMBIO CLAVE
     body: JSON.stringify({ action, data })
   });
   return res.json();
