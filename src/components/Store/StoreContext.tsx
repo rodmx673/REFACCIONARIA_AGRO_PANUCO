@@ -101,7 +101,49 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const removeCoupon = () => { setAppliedCoupon(null); toast.info('Cupón removido'); };
-  const refreshClientOrders = async () => {};
+  const refreshClientOrders = async (email: string) => {
+    if (!email) return;
+    try {
+      const { getOnlineOrdersApi } = await import('../../lib/sheetsApi');
+      const res = await getOnlineOrdersApi();
+      
+      if (res.success && res.data) {
+        // Filtrar por el correo del cliente (case-insensitive)
+        const myOrders = res.data.filter((o: any) => 
+          String(o.customerEmail || '').toLowerCase() === email.toLowerCase()
+        );
+        
+        // Mapear al formato Order que espera el frontend
+        const mapped = myOrders.map((o: any) => ({
+          id: o._id || o.id,
+          orderNumber: o.orderNumber,
+          customerName: o.customerName,
+          customerEmail: o.customerEmail,
+          customerPhone: o.customerPhone,
+          items: Array.isArray(o.items) ? o.items : (typeof o.items === 'string' ? JSON.parse(o.items) : []),
+          subtotal: Number(o.subtotal) || 0,
+          tax: Number(o.tax) || 0,
+          shippingCost: Number(o.shippingCost) || 0,
+          discount: Number(o.discount) || 0,
+          total: Number(o.total) || 0,
+          status: o.status || 'PENDIENTE',
+          paymentMethod: o.paymentMethod,
+          paymentStatus: o.paymentStatus,
+          shippingAddress: typeof o.shippingAddress === 'string' ? JSON.parse(o.shippingAddress) : (o.shippingAddress || {}),
+          shippingMethod: o.shippingMethod,
+          trackingNumber: o.trackingNumber || '',
+          carrier: o.carrier || '',
+          couponCode: o.couponCode || '',
+          createdAt: o.createdAt || '',
+          updatedAt: o.updatedAt || '',
+        }));
+        
+        setClientOrders(mapped);
+      }
+    } catch (err) {
+      console.error('Error fetching client orders:', err);
+    }
+  };
 
   return (
     <StoreContext.Provider value={{ cart, addToCart, updateQuantity, removeFromCart, clearCart, isCartOpen, setIsCartOpen, wishlist, toggleWishlist, isWishlisted, appliedCoupon, applyCoupon, removeCoupon, subtotal, tax, discountAmount, shippingCost, total, shippingMethod, setShippingMethod, postalCode, setPostalCode, clientEmail, setClientEmail, clientOrders, refreshClientOrders }}>

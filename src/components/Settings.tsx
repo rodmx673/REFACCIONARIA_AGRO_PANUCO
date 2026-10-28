@@ -44,9 +44,23 @@ export const Settings: React.FC = () => {
 
   // Estado para los módulos del sistema (POR DEFECTO APAGADOS)
   const [activeModules, setActiveModules] = useState<Record<string, boolean>>({
-    pos: true, inventory: true, catalog: true, ecommerce: true, ocr: true, invoices: true,
-    customers: true, vendors: true, reports: true, hr: false, commissions: false, 
-    attendance: false, payroll: false, invoicing: true, sat: false, admin: true, settings: true
+    pos: true,
+    inventory: true,
+    'reference-catalog': true,
+    'online-orders': true,
+    'ocr-reader': true,
+    'invoice-history': true,
+    customers: true,
+    vendors: true,
+    reports: true,
+    employees: false,
+    commissions: false,
+    attendance: false,
+    payroll: false,
+    invoicing: true,
+    'sat-config': false,
+    admin: true,
+    settings: true
   });
 
   useEffect(() => {
@@ -207,19 +221,19 @@ export const Settings: React.FC = () => {
                 {[
                   { id: 'pos', label: 'Punto de Venta', desc: 'Caja registradora y ventas directas.' },
                   { id: 'inventory', label: 'Inventario y Stock', desc: 'Control de piezas y almacén.' },
-                  { id: 'catalog', label: 'Catálogo de Partes', desc: 'Buscador de números OEM y distribuidores.' },
-                  { id: 'ecommerce', label: 'Pedidos E-Commerce', desc: 'Gestión de tienda virtual.' },
-                  { id: 'ocr', label: 'Extractor de Facturas', desc: 'Lectura de facturas con IA.' },
-                  { id: 'invoices', label: 'Historial de Facturas', desc: 'Registro de compras a proveedores.' },
+                  { id: 'reference-catalog', label: 'Catálogo de Partes', desc: 'Buscador de números OEM y distribuidores.' },
+                  { id: 'online-orders', label: 'Pedidos E-Commerce', desc: 'Gestión de tienda virtual.' },
+                  { id: 'ocr-reader', label: 'Extractor de Facturas', desc: 'Lectura de facturas con IA.' },
+                  { id: 'invoice-history', label: 'Historial de Facturas', desc: 'Registro de compras a proveedores.' },
                   { id: 'customers', label: 'Clientes', desc: 'Directorio de clientes.' },
                   { id: 'vendors', label: 'Proveedores', desc: 'Directorio de proveedores.' },
                   { id: 'reports', label: 'Reportes', desc: 'Estadísticas y gráficas.' },
-                  { id: 'invoicing', label: 'Facturación', desc: 'Generación de tickets y facturas.' },
-                  { id: 'hr', label: 'Recursos Humanos', desc: 'Gestión de empleados y salarios.' },
+                  { id: 'employees', label: 'Recursos Humanos', desc: 'Gestión de empleados.' },
                   { id: 'commissions', label: 'Comisiones', desc: 'Cálculo de comisiones.' },
                   { id: 'attendance', label: 'Asistencia', desc: 'Control de horarios.' },
                   { id: 'payroll', label: 'Nómina', desc: 'Pagos de nómina.' },
-                  { id: 'sat', label: 'Configuración SAT', desc: 'Certificados fiscales.' },
+                  { id: 'invoicing', label: 'Facturación', desc: 'Generación de tickets y facturas.' },
+                  { id: 'sat-config', label: 'Configuración SAT', desc: 'Certificados fiscales.' },
                   { id: 'admin', label: 'Panel de Administración', desc: 'Gestión de usuarios y roles.' },
                 ].map((mod) => (
                   <div key={mod.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex items-center justify-between">

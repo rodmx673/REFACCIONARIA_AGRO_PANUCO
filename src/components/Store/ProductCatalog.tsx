@@ -77,11 +77,11 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
       // Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchDesc = p.description.toLowerCase().includes(q);
-        const matchPart = p.pieceNumber.toLowerCase().includes(q);
-        const matchBrand = p.brand.toLowerCase().includes(q);
-        const matchCat = p.category?.toLowerCase().includes(q);
-        const matchModel = p.model?.toLowerCase().includes(q);
+        const matchDesc = String(p.description || '').toLowerCase().includes(q);
+        const matchPart = String(p.pieceNumber || '').toLowerCase().includes(q);
+        const matchBrand = String(p.brand || '').toLowerCase().includes(q);
+        const matchCat = String(p.category || '').toLowerCase().includes(q);
+        const matchModel = String(p.model || '').toLowerCase().includes(q);
         if (!matchDesc && !matchPart && !matchBrand && !matchCat && !matchModel) {
           return false;
         }
@@ -95,10 +95,10 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
     });
   }, [products, selectedCategory, selectedBrand, inStockOnly, maxPrice, searchQuery, sortBy]);
 
-  const handleCopyPart = (part: string, e: React.MouseEvent) => {
+  const handleCopyPart = (part: any, e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(part);
-    setCopiedId(part);
+    setCopiedId(String(part || ""));
     toast.success(`Copiado: ${part}`);
     setTimeout(() => setCopiedId(null), 1800);
   };
@@ -408,12 +408,12 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                         {/* Part Number Pill */}
                         <div className="flex items-center justify-between gap-1">
                           <div
-                            onClick={(e) => handleCopyPart(product.pieceNumber, e)}
+                            onClick={(e) => handleCopyPart(String(product.pieceNumber || ""), e)}
                             className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded font-mono text-[11px] font-bold transition-colors"
                             title="Copiar número de parte"
                           >
-                            <span>{product.pieceNumber}</span>
-                            {copiedId === product.pieceNumber ? <Check size={11} className="text-emerald-700" /> : <Copy size={11} className="text-gray-400" />}
+                            <span>{String(product.pieceNumber || "S/N")}</span>
+                            {copiedId === String(product.pieceNumber || "") ? <Check size={11} className="text-emerald-700" /> : <Copy size={11} className="text-gray-400" />}
                           </div>
 
                           <span className="text-[11px] text-gray-400 font-medium">

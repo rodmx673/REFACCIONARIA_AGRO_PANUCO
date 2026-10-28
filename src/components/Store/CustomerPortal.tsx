@@ -41,57 +41,67 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     wishlist, 
     toggleWishlist, 
     addToCart,
-    refreshClientOrders
+    refreshClientOrders,
+    clientOrders
   } = useStore();
 
   const [activeTab, setActiveTab] = useState<'orders' | 'wishlist' | 'credit' | 'addresses'>('orders');
   const [emailInput, setEmailInput] = useState(clientEmail || '');
-  const [orders, setOrders] = useState<Order[]>([]);
+  // Usamos clientOrders del contexto directamente (evita duplicar estado)
+  const orders = clientOrders;
   const [loadingOrders, setLoadingOrders] = useState(false);
 
-  // Fetch orders when email changes
+  // Sincronizar con el contexto cuando cambie el cliente
+  useEffect(() => {
+    if (clientEmail && clientEmail.trim().length > 0) {
+      setEmailInput(clientEmail);
+    }
+  }, [clientEmail]);
+
+  // Cargar pedidos cuando cambia emailInput (con debounce manual via useEffect)
   useEffect(() => {
     const trimmedEmail = emailInput.trim().toLowerCase();
     if (!trimmedEmail || !trimmedEmail.includes('@')) {
-      setOrders([]);
-      setLoadingOrders(false);
       return;
     }
     
+    let cancelled = false;
     const fetchOrders = async () => {
       setLoadingOrders(true);
       try {
-        const res = await fetch(import.meta.env.VITE_APPS_SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify({ 
-            action: 'getOnlineOrders', 
-            data: { email: trimmedEmail } 
-          })
-        });
-        const data = await res.json();
-        if (data.success) {
-          setOrders(data.data || []);
-        }
+        await refreshClientOrders(trimmedEmail);
       } catch (error) {
         console.error("Error cargando pedidos:", error);
       } finally {
-        setLoadingOrders(false);
+        if (!cancelled) setLoadingOrders(false);
       }
     };
 
     fetchOrders();
+    
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emailInput]);
 
-  const handleSearchEmail = (e: React.FormEvent) => {
+  const handleSearchEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = emailInput.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@') || cleanEmail.split('@').length > 2) {
       toast.error('Ingresa un correo electrónico válido (ej. cliente@correo.com)');
       return;
     }
-    setClientEmail(cleanEmail);
-    setEmailInput(cleanEmail); // Forzar actualización para disparar el useEffect
-    toast.success(`Consultando pedidos para ${cleanEmail}`);
+    
+    setLoadingOrders(true);
+    try {
+      setClientEmail(cleanEmail);
+      await refreshClientOrders(cleanEmail);
+      toast.success(`Consultando pedidos para ${cleanEmail}`);
+    } catch (err) {
+      toast.error('Error al consultar pedidos');
+      console.error(err);
+    } finally {
+      setLoadingOrders(false);
+    }
   };
 
   const wishlistedProducts = products.filter(p => wishlist.includes(p.id));

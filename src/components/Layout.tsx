@@ -44,22 +44,13 @@ export const Layout: React.FC<{
 }> = ({ children, activeTab, setActiveTab, onSwitchToStore }) => {
   const { user, signOut, permissions } = useContext(AuthContext) as any;
   const [collapsed, setCollapsed] = useState(false);
-  const [activeModules, setActiveModules] = useState<Record<string, boolean>>({
-    pos: true, inventory: true, catalog: true, ecommerce: true, ocr: true, invoices: true,
-    customers: true, vendors: true, reports: true, hr: false, commissions: false, 
-    attendance: false, payroll: false, invoicing: true, sat: false, admin: true, settings: true
-  });
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const prevLowStockIds = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const savedModules = localStorage.getItem('fp_modules');
-    if (savedModules) {
-      try { setActiveModules(JSON.parse(savedModules)); } catch (e) {}
-    }
-  }, []);
+
   const contentScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -131,6 +122,28 @@ export const Layout: React.FC<{
     { id: 'settings', label: 'Configuración del Sistema', icon: Settings, roles: ['ADMIN'], perm: 'canAccessSettings' },
   ];
 
+  // Cargar módulos activos desde localStorage
+  const [enabledModules, setEnabledModules] = React.useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('fp_modules');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+
+  // Escuchar cambios en localStorage (para actualizar cuando se guarde en Settings)
+  React.useEffect(() => {
+    const handler = () => {
+      try {
+        const saved = localStorage.getItem('fp_modules');
+        setEnabledModules(saved ? JSON.parse(saved) : {});
+      } catch {}
+    };
+    window.addEventListener('storage', handler);
+    // Polling cada 500ms como respaldo (por si el evento storage no dispara)
+    const interval = setInterval(handler, 500);
+    return () => { window.removeEventListener('storage', handler); clearInterval(interval); };
+  }, []);
+
   const isRoleAllowed = (itemRoles: string[], userRole?: string) => {
     if (!userRole) return false;
     const r = userRole.toUpperCase();
@@ -143,29 +156,21 @@ export const Layout: React.FC<{
   };
 
   const filteredNavItems = navItems.filter(item => {
-    // Ocultar módulos desactivados en configuraciones
-    if (item.id === 'pos' && !activeModules.pos) return false;
-    if (item.id === 'inventory' && !activeModules.inventory) return false;
-    if (item.id === 'reference-catalog' && !activeModules.catalog) return false;
-    if (item.id === 'online-orders' && !activeModules.ecommerce) return false;
-    if (item.id === 'ocr-reader' && !activeModules.ocr) return false;
-    if (item.id === 'invoice-history' && !activeModules.invoices) return false;
-    if (item.id === 'customers' && !activeModules.customers) return false;
-    if (item.id === 'vendors' && !activeModules.vendors) return false;
-    if (item.id === 'reports' && !activeModules.reports) return false;
-    if (item.id === 'employees' && !activeModules.hr) return false;
-    if (item.id === 'commissions' && !activeModules.commissions) return false;
-    if (item.id === 'attendance' && !activeModules.attendance) return false;
-    if (item.id === 'payroll' && !activeModules.payroll) return false;
-    if (item.id === 'invoicing' && !activeModules.invoicing) return false;
-    if (item.id === 'sat-config' && !activeModules.sat) return false;
-    if (item.id === 'admin-panel' && !activeModules.admin) return false;
-    if (item.id === 'settings' && !activeModules.settings) return false;
-    if (user?.role === 'ADMIN') return true;
+    // 1. 'settings' SIEMPRE visible (para no quedar encerrado sin poder reactivar)
+    if (item.id === 'settings') return true;
+
+    // 2. Validar que el módulo esté activo en fp_modules
+    //    (si no existe la clave, se considera activo por defecto)
+    if (enabledModules[item.id] === false) return false;
+
+    // 3. Validar rol del usuario
     if (!isRoleAllowed(item.roles, user?.role)) return false;
-    if (permissions && item.perm) {
-      return (permissions as any)[item.perm] === true;
+
+    // 4. Validar permisos finos (si están cargados)
+    if (permissions && item.perm && (permissions as any)[item.perm] !== true) {
+      return false;
     }
+
     return true;
   });
 

@@ -207,15 +207,18 @@ export const PositionsManager: React.FC<PositionsManagerProps> = ({
       (code === 'CLERK' && e.role === 'CAJERO') ||
       (code === 'VENTAS' && e.role === 'VENDEDOR') ||
       (code === 'BODEGA' && e.role === 'ALMACENISTA') ||
-      e.position.toLowerCase() === name.toLowerCase()
+      String(e.position || '').toLowerCase() === String(name || '').toLowerCase()
     ).length;
   };
 
-  const filteredPositions = positions.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPositions = positions.filter(p => {
+    const term = String(searchTerm || '').toLowerCase();
+    return (
+      String(p.name || '').toLowerCase().includes(term) ||
+      String(p.code || '').toLowerCase().includes(term) ||
+      String(p.department || '').toLowerCase().includes(term)
+    );
+  });
 
   return (
     <div className="space-y-6">

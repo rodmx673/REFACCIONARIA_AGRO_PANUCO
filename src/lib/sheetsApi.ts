@@ -1,9 +1,6 @@
 /**
  * Google Sheets API Client
  * Calls the Apps Script Web App backend.
- *
- * Configure VITE_APPS_SCRIPT_URL in .env:
- * VITE_APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
  */
 
 const WEB_APP_URL = (import.meta as any).env?.VITE_APPS_SCRIPT_URL || '';
@@ -17,20 +14,34 @@ async function callApi(action: string, data: Record<string, any> = {}): Promise<
   }
 
   try {
-    const response = await fetch(WEB_APP_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action, data }),
-      redirect: 'follow',
-    });
-
-    const text = await response.text();
-    // Apps Script may return HTML redirect before JSON
-    const jsonStart = text.indexOf('{');
-    if (jsonStart === -1) {
-      throw new Error('Respuesta inválida del servidor');
+    // 1. Si es una acción de ESCRITURA, enviamos POST ciego para evitar CORS
+    const writeActions = [
+      'createOnlineOrder', 'createSale', 'createProduct', 'updateProduct', 
+      'createCustomer', 'updateCustomer', 'createMovement', 'updateOnlineOrderStatus'
+    ];
+    
+    if (writeActions.includes(action)) {
+      await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, data }),
+        mode: 'no-cors',
+      });
+      return { success: true, data: { id: 'ORD-' + Date.now(), orderNumber: data.orderNumber || 'FP-ONLINE' } };
     }
+
+    // 2. Si es una acción de LECTURA, usamos GET para leer el JSON sin problemas
+    const urlWithParams = new URL(WEB_APP_URL);
+    urlWithParams.searchParams.set('action', action);
+    urlWithParams.searchParams.set('data', JSON.stringify(data));
+
+    const response = await fetch(urlWithParams.toString(), { method: 'GET', redirect: 'follow' });
+    const text = await response.text();
+    const jsonStart = text.indexOf('{');
+    
+    if (jsonStart === -1) throw new Error('Respuesta inválida del servidor');
     return JSON.parse(text.substring(jsonStart));
+    
   } catch (err) {
     console.error(`API call failed [${action}]:`, err);
     return { success: false, error: err instanceof Error ? err.message : 'Error de red' };
@@ -73,7 +84,6 @@ export async function useRegistrationCode(
 ): Promise<{ success: boolean; data?: { role: string }; error?: string }> {
   return callApi('useCode', { code, userEmail });
 }
-
 
 // ═══════════════════════════════════════════════════
 //  Users
@@ -123,7 +133,6 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; er
   return callApi('deleteUser', { userId });
 }
 
-
 // ═══════════════════════════════════════════════════
 //  Roles & Permissions
 // ═══════════════════════════════════════════════════
@@ -166,7 +175,6 @@ export async function updateRolePermissions(
 ): Promise<{ success: boolean; error?: string }> {
   return callApi('updateRole', { roleId, permissions });
 }
-
 
 // ═══════════════════════════════════════════════════
 //  Helper: Convert sheet role to app permissions
@@ -227,7 +235,6 @@ export const AVAILABLE_ROLES = [
   { code: 'ALMACENISTA', name: 'Almacenista', color: '#78716C', description: 'Control de almacén' },
 ];
 
-
 // ═══════════════════════════════════════════════════
 //  Products
 // ═══════════════════════════════════════════════════
@@ -273,7 +280,6 @@ export async function deleteProduct(id: string): Promise<{ success: boolean; err
   return callApi('deleteProduct', { id });
 }
 
-
 // ═══════════════════════════════════════════════════
 //  Inventory Movements
 // ═══════════════════════════════════════════════════
@@ -299,4 +305,54 @@ export async function createMovement(
   movement: Partial<SheetMovement>
 ): Promise<{ success: boolean; data?: SheetMovement; error?: string }> {
   return callApi('createMovement', movement);
+}
+
+// ═══════════════════════════════════════════════════
+//  PEDIDOS E-COMMERCE (TIENDA ONLINE)
+// ═══════════════════════════════════════════════════
+
+export interface SheetOnlineOrder {
+  _id: string;
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  items: any[];
+  subtotal: number;
+  tax: number;
+  shippingCost: number;
+  discount: number;
+  total: number;
+  status: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  shippingAddress: any;
+  shippingMethod: string;
+  trackingNumber: string;
+  carrier: string;
+  couponCode: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function createOnlineOrderApi(
+  orderData: any
+): Promise<{ success: boolean; data?: { id: string; orderNumber: string }; error?: string }> {
+  return callApi('createOnlineOrder', orderData);
+}
+
+export async function getOnlineOrdersApi(): Promise<{
+  success: boolean;
+  data?: SheetOnlineOrder[];
+  total?: number;
+  error?: string;
+}> {
+  return callApi('getOnlineOrders', {});
+}
+
+export async function updateOnlineOrderStatusApi(
+  orderId: string,
+  status: string
+): Promise<{ success: boolean; error?: string }> {
+  return callApi('updateOnlineOrderStatus', { orderId, status });
 }

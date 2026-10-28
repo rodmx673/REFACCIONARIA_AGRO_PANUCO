@@ -26,8 +26,18 @@ import { InvoiceHistory } from './components/InvoiceHistory';
 import { ReferenceCatalog } from './components/ReferenceCatalog';
 import { OnlineStoreView } from './components/Store/OnlineStoreView';
 import { OnlineOrdersManager } from './components/Store/OnlineOrdersManager';
+import { ModuleDisabled } from './components/ModuleDisabled';
 
 import { BarChart3, Settings as SettingsIcon, AlertCircle } from 'lucide-react';
+
+function isModuleEnabled(moduleId: string): boolean {
+  try {
+    const saved = localStorage.getItem('fp_modules');
+    if (!saved) return true;
+    const modules = JSON.parse(saved);
+    return modules[moduleId] !== false;
+  } catch { return true; }
+}
 
 function AppContent() {
   const { user, loading } = useContext(AuthContext);
@@ -63,49 +73,53 @@ function AppContent() {
     return <LoginView onExploreStore={() => setViewMode('store')} />;
   }
 
-  const renderContent = () => {
+    const renderContent = () => {
     switch (activeTab) {
-      case 'pos': return <POS />;
-      case 'online-orders': return <OnlineOrdersManager />;
+      case 'pos': 
+        return isModuleEnabled('pos') ? <POS /> : <ModuleDisabled moduleName="Punto de Venta" />;
+      case 'online-orders': 
+        return isModuleEnabled('online-orders') ? <OnlineOrdersManager /> : <ModuleDisabled moduleName="Pedidos E-Commerce" />;
       case 'inventory': 
-        return <Inventory prefilledProduct={prefilledProduct} onClearPrefilled={() => setPrefilledProduct(null)} />;
+        return isModuleEnabled('inventory') ? <Inventory /> : <ModuleDisabled moduleName="Inventario y Stock" />;
+      case 'reference-catalog':
+        return isModuleEnabled('reference-catalog') ? <ReferenceCatalog /> : <ModuleDisabled moduleName="Catálogo de Partes" />;
       case 'invoice-extractor':
       case 'ocr-reader': 
-        return (
-          <OCRInvoiceReader 
-            onNavigateToHistory={() => setActiveTab('invoice-history')} 
-            onNavigateToInventory={() => setActiveTab('inventory')}
-          />
-        );
-      case 'reference-catalog': 
-        return (
-          <ReferenceCatalog 
-            onImportToStock={(item) => { 
-              setPrefilledProduct(item); 
-              setActiveTab('inventory'); 
-            }} 
-          />
-        );
+        return isModuleEnabled('ocr-reader') 
+          ? <OCRInvoiceReader onNavigateToHistory={() => setActiveTab('invoice-history')} onNavigateToInventory={() => setActiveTab('inventory')} />
+          : <ModuleDisabled moduleName="Extractor de Facturas" />;
       case 'invoice-history':
-        return (
-          <InvoiceHistory 
-            onNavigateToExtractor={() => setActiveTab('ocr-reader')} 
-            onNavigateToInventory={() => setActiveTab('inventory')}
-          />
-        );
-      case 'customers': return <Customers />;
-      case 'vendors': return <Vendors />;
-      case 'reports': return <Reports />;
-      case 'admin': return <AdminPanel />;
-      case 'employees': return <EmployeeList />;
-      case 'commissions': return <CommissionCalculator />;
-      case 'attendance': return <AttendanceManager />;
-      case 'invoicing': return <ProfessionalInvoice onClose={() => setActiveTab('pos')} />;
-      case 'payroll': return <Payroll />;
-      case 'sat-config': return <SatConfigWizard />;
-      case 'settings': return <Settings />;
-      case 'admin-panel': return <AdminPanel />;
-      default: return <POS />;
+        return isModuleEnabled('invoice-history') 
+          ? <InvoiceHistory onNavigateToExtractor={() => setActiveTab('ocr-reader')} onNavigateToInventory={() => setActiveTab('inventory')} />
+          : <ModuleDisabled moduleName="Historial de Facturas" />;
+      case 'customers': 
+        return isModuleEnabled('customers') ? <Customers /> : <ModuleDisabled moduleName="Clientes" />;
+      case 'vendors': 
+        return isModuleEnabled('vendors') ? <Vendors /> : <ModuleDisabled moduleName="Proveedores" />;
+      case 'reports': 
+        return isModuleEnabled('reports') ? <Reports /> : <ModuleDisabled moduleName="Reportes" />;
+      case 'employees': 
+        return isModuleEnabled('employees') ? <EmployeeList /> : <ModuleDisabled moduleName="Recursos Humanos" />;
+      case 'commissions': 
+        return isModuleEnabled('commissions') ? <CommissionCalculator /> : <ModuleDisabled moduleName="Comisiones" />;
+      case 'attendance': 
+        return isModuleEnabled('attendance') ? <AttendanceManager /> : <ModuleDisabled moduleName="Asistencia" />;
+      case 'invoicing': 
+        return isModuleEnabled('invoicing') ? <TaxReports /> : <ModuleDisabled moduleName="Facturación" />;
+      case 'payroll': 
+        return isModuleEnabled('payroll') ? <Payroll /> : <ModuleDisabled moduleName="Nómina" />;
+      case 'professional-invoice': 
+        return isModuleEnabled('invoicing') 
+          ? <ProfessionalInvoice onClose={() => setActiveTab('invoicing')} />
+          : <ModuleDisabled moduleName="Facturador Pro" />;
+      case 'sat-config': 
+        return isModuleEnabled('sat-config') ? <SatConfigWizard /> : <ModuleDisabled moduleName="Configuración SAT" />;
+      case 'settings': 
+        return <Settings />;
+      case 'admin': 
+        return isModuleEnabled('admin') ? <AdminPanel /> : <ModuleDisabled moduleName="Panel de Administración" />;
+      default: 
+        return <POS />;
     }
   };
 

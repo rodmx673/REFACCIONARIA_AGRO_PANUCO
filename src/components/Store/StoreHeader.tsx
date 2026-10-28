@@ -68,10 +68,10 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
   // Suggestions based on search
   const suggestions = searchQuery.trim().length >= 2 
     ? products.filter(p => 
-        p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.pieceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+        String(p.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(p.pieceNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(p.brand || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(p.category || '').toLowerCase().includes(searchQuery.toLowerCase())
       ).slice(0, 5)
     : [];
 
